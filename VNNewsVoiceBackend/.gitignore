@@ -36,3 +36,5 @@ build/
 
 ### ENV ###
 .env.properties
+.env
+/.env.properties
