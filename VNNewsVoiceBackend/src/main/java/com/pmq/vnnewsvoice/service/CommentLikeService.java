@@ -1,8 +1,8 @@
-package com.pmq.vnnewsvoice.repository;
+package com.pmq.vnnewsvoice.service;
 
 import com.pmq.vnnewsvoice.pojo.CommentLike;
 
-public interface CommentLikeRepository {
+public interface CommentLikeService {
     CommentLike addCommentLike(CommentLike commentLike);
 
     long countCommentLikesByCommentId(Long commentId);
