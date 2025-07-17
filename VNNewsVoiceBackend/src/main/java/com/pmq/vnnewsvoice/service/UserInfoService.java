@@ -1,13 +1,12 @@
-package com.pmq.vnnewsvoice.repository;
+package com.pmq.vnnewsvoice.service;
 
 import com.pmq.vnnewsvoice.pojo.UserInfo;
-import com.pmq.vnnewsvoice.pojo.UserProvider;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public interface UserInfoRepository {
+public interface UserInfoService {
     UserInfo addUser(UserInfo Userinfo);
 
     Optional<UserInfo> getUserById(Long id);

@@ -1,14 +1,11 @@
-package com.pmq.vnnewsvoice.repository.impl;
+package com.pmq.vnnewsvoice.service.impl;
 
 import com.pmq.vnnewsvoice.pojo.CommentLike;
-import com.pmq.vnnewsvoice.repository.CommentLikeRepository;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
+import com.pmq.vnnewsvoice.service.CommentLikeService;
+import org.springframework.stereotype.Service;
 
-
-@Repository
-@Transactional
-public class CommentLikeRepositoryImpl implements CommentLikeRepository {
+@Service
+public class CommentLikeServiceImpl implements CommentLikeService {
     @Override
     public CommentLike addCommentLike(CommentLike commentLike) {
         return null;

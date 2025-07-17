@@ -1,17 +1,15 @@
-package com.pmq.vnnewsvoice.repository.impl;
+package com.pmq.vnnewsvoice.service.impl;
 
 import com.pmq.vnnewsvoice.pojo.UserInfo;
-import com.pmq.vnnewsvoice.repository.UserInfoRepository;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
+import com.pmq.vnnewsvoice.service.UserInfoService;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@Repository
-@Transactional
-public class UserInfoRepositoryImpl implements UserInfoRepository {
+@Service
+public class UserInfoServiceImpl implements UserInfoService {
     @Override
     public UserInfo addUser(UserInfo Userinfo) {
         return null;
