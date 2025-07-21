@@ -1,0 +1,75 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      layout:decorate="~{layout}">
+
+<th:block layout:fragment="pagetitle" >
+    <div th:replace="~{partials/title-meta :: title-meta('Fetch Articles')}"></div>
+</th:block>
+
+<head>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div th:replace="~{partials/page-title :: page-title('VN news','Fetch Articles')}"></div>
+    
+    <!-- Alert Messages -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="alert alert-success alert-dismissible fade show" role="alert" th:if="${success != null}">
+                <i class="ri-check-double-line me-1 align-middle"></i> <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert" th:if="${error != null}">
+                <i class="ri-error-warning-line me-1 align-middle"></i> <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fetch Articles Card -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Fetch Articles from API</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="mb-3">
+                                <p>Click the button below to fetch articles from the configured API endpoint:</p>
+                                <p class="text-muted"><strong>API URL:</strong> <span th:text="${@environment.getProperty('api.crawler.url')}"></span></p>
+                            </div>
+                            
+                            <form th:action="@{/admin/articles/fetch}" method="post">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="ri-download-cloud-2-line align-bottom me-1"></i> Fetch Articles
+                                    </button>
+                                    <a th:href="@{/admin/articles}" class="btn btn-light">Cancel</a>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="alert alert-info">
+                                <h5 class="alert-heading"><i class="ri-information-line me-1 align-middle"></i> Information</h5>
+                                <p>This action will:</p>
+                                <ul>
+                                    <li>Connect to the FastAPI crawler service</li>
+                                    <li>Fetch the latest articles</li>
+                                    <li>Save them to the database</li>
+                                </ul>
+                                <p class="mb-0">Articles with the same title or slug will be skipped to avoid duplicates.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

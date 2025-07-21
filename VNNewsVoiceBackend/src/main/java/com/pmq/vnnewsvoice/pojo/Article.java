@@ -38,7 +38,10 @@ import java.util.Set;
     @NamedQuery(name = "Article.findByAudioUrl", query = "SELECT a FROM Article a WHERE a.audioUrl = :audioUrl"),
     @NamedQuery(name = "Article.findBySummary", query = "SELECT a FROM Article a WHERE a.summary = :summary"),
     @NamedQuery(name = "Article.findByIsActive", query = "SELECT a FROM Article a WHERE a.isActive = :isActive"),
-    @NamedQuery(name = "Article.findBySlug", query = "SELECT a FROM Article a WHERE a.slug = :slug")})
+    @NamedQuery(name = "Article.findBySlug", query = "SELECT a FROM Article a WHERE a.slug = :slug"),
+    @NamedQuery(name = "Article.findByOriginalUrl", query = "SELECT a FROM Article a WHERE a.originalUrl = :originalUrl"),
+    @NamedQuery(name = "Article.findByCreatedAt", query = "SELECT a FROM Article a WHERE a.createdAt = :createdAt"),
+    @NamedQuery(name = "Article.findByUpdatedAt", query = "SELECT a FROM Article a WHERE a.updatedAt = :updatedAt")})
 public class Article implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -64,6 +67,14 @@ public class Article implements Serializable {
     @Basic(optional = false)
     @Column(name = "slug")
     private String slug;
+    @Column(name = "original_url")
+    private String originalUrl;
+    @Column(name = "created_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdAt;
+    @Column(name = "updated_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date updatedAt;
     @JoinColumn(name = "category_id", referencedColumnName = "id")
     @ManyToOne
     private Category categoryId;
@@ -73,8 +84,8 @@ public class Article implements Serializable {
     @JoinColumn(name = "generator_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Generator generatorId;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "articleId")
-    private Set<ArticleBlock> articleBlockSet;
+    @OneToMany(cascade = {CascadeType.MERGE, CascadeType.REFRESH}, mappedBy = "articleId")
+    private Set<ArticleBlock> articleblockSet;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "articleId")
     private Set<Comment> commentSet;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "articleId")
@@ -157,6 +168,30 @@ public class Article implements Serializable {
         this.slug = slug;
     }
 
+    public String getOriginalUrl() {
+        return originalUrl;
+    }
+
+    public void setOriginalUrl(String originalUrl) {
+        this.originalUrl = originalUrl;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     public Category getCategoryId() {
         return categoryId;
     }
@@ -182,11 +217,11 @@ public class Article implements Serializable {
     }
 
     public Set<ArticleBlock> getArticleblockSet() {
-        return articleBlockSet;
+        return articleblockSet;
     }
 
-    public void setArticleblockSet(Set<ArticleBlock> articleBlockSet) {
-        this.articleBlockSet = articleBlockSet;
+    public void setArticleblockSet(Set<ArticleBlock> articleblockSet) {
+        this.articleblockSet = articleblockSet;
     }
 
     public Set<Comment> getCommentSet() {

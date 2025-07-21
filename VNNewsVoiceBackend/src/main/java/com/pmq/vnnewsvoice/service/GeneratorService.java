@@ -24,4 +24,6 @@ public interface GeneratorService {
     LocalDateTime getLastCrawlTimeOfGeneratorByGenerator(Generator generator);
     LocalDateTime getLastCrawlTimeOfGeneratorById(Long id);
     LocalDateTime getLastCrawlTimeOfGeneratorByName(String name);
+
+    boolean isValidGenerator(Generator generator);
 }

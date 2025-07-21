@@ -3,27 +3,39 @@ package com.pmq.vnnewsvoice.repository.impl;
 
 import com.pmq.vnnewsvoice.pojo.ArticleBlock;
 import com.pmq.vnnewsvoice.repository.ArticleBlockRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 @Transactional
 public class ArticleBlockRepositoryImpl implements ArticleBlockRepository {
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Override
     public ArticleBlock addArticleBlock(ArticleBlock articleBlock) {
-        return null;
+        entityManager.persist(articleBlock);
+        return articleBlock;
     }
 
     @Override
     public Optional<ArticleBlock> getArticleBlockById(Long id) {
-        return Optional.empty();
+        return Optional.ofNullable(entityManager.find(ArticleBlock.class, id));
     }
 
     @Override
     public Optional<ArticleBlock> getArticleBlockByArticleId(Long articleId) {
-        return Optional.empty();
+        String hql = "FROM ArticleBlock ab WHERE ab.articleId = :articleId";
+        return entityManager.createQuery(hql, ArticleBlock.class)
+                .setParameter("articleId", articleId)
+                .getResultStream()
+                .findFirst();
     }
 
     @Override
@@ -38,11 +50,21 @@ public class ArticleBlockRepositoryImpl implements ArticleBlockRepository {
 
     @Override
     public Optional<ArticleBlock> updateArticleBlock(ArticleBlock articleBlock) {
+        ArticleBlock existingBlock = entityManager.find(ArticleBlock.class, articleBlock.getId());
+        if (existingBlock != null) {
+            entityManager.merge(existingBlock);
+            return Optional.of(existingBlock);
+        }
         return Optional.empty();
     }
 
     @Override
     public boolean deleteArticleBlock(Long id) {
+        ArticleBlock articleBlock = entityManager.find(ArticleBlock.class, id);
+        if (articleBlock != null) {
+            entityManager.remove(articleBlock);
+            return true;
+        }
         return false;
     }
 
@@ -53,16 +75,30 @@ public class ArticleBlockRepositoryImpl implements ArticleBlockRepository {
 
     @Override
     public long countArticleBlocksByArticleId(Long articleId) {
-        return 0;
+        String hql = "SELECT COUNT(ab) FROM ArticleBlock ab WHERE ab.articleId = :articleId";
+        return entityManager.createQuery(hql, Long.class)
+                .setParameter("articleId", articleId)
+                .getSingleResult();
     }
 
     @Override
     public long countArticleBlocksByBlockType(String blockType) {
-        return 0;
+        String hql = "SELECT COUNT(ab) FROM ArticleBlock ab WHERE ab.type = :blockType";
+        return entityManager.createQuery(hql, Long.class)
+                .setParameter("blockType", blockType)
+                .getSingleResult();
     }
 
     @Override
     public long countArticleBlocksByArticleIdAndBlockType(Long articleId, String blockType) {
         return 0;
+    }
+
+    @Override
+    public List<ArticleBlock> getArticleBlocksByArticleId(Long articleId) {
+        String hql = "FROM ArticleBlock ab WHERE ab.articleId = :articleId";
+        return entityManager.createQuery(hql, ArticleBlock.class)
+                .setParameter("articleId", articleId)
+                .getResultList();
     }
 }

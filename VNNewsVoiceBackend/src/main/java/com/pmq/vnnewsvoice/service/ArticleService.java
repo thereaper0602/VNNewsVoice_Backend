@@ -1,24 +1,28 @@
 package com.pmq.vnnewsvoice.service;
 
 import com.pmq.vnnewsvoice.pojo.Article;
-import com.pmq.vnnewsvoice.repository.ArticleRepository;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public interface ArticleService {
-    ArticleRepository addArticle(Article article);
+    Article addArticle(Article article);
 
     Optional<Article> getArticleById(Long id);
     Optional<Article> getArticleBySlugAndId(String slug, Long id);
     List<Article> getArticlesByCategoryId(Long categoryId);
     List<Article> searchArticles(Map<String, String> filters, Map<String, String> params);
+    List<Article> getArticles(Map<String, String> params);
 
     Article updateArticle(Article article);
 
     boolean deleteArticle(Long id);
 
     long countArticles();
-    long countSearchArticles(Map<String, String> filters, Map<String, String> params);
+    long countSearchArticles(Map<String, String> filters);
+
+    // method to check some specific conditions
+    boolean isArticleValid(Article article);
+
 }

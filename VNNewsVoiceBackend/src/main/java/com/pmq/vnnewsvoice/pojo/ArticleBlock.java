@@ -61,7 +61,7 @@ public class ArticleBlock implements Serializable {
     @Column(name = "caption")
     private String caption;
     @JoinColumn(name = "article_id", referencedColumnName = "id")
-    @ManyToOne(optional = false)
+    @ManyToOne
     private Article articleId;
 
     public ArticleBlock() {
@@ -179,7 +179,7 @@ public class ArticleBlock implements Serializable {
 
     @Override
     public String toString() {
-        return "com.pmq.vnnewsvoice.pojo.Articleblock[ id=" + id + " ]";
+        return "com.pmq.vnnewsvoice.pojo.ArticleBlock[ id=" + id + " ]";
     }
     
 }

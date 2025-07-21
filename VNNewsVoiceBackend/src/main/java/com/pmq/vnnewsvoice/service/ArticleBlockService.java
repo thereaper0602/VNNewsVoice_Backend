@@ -2,6 +2,7 @@ package com.pmq.vnnewsvoice.service;
 
 import com.pmq.vnnewsvoice.pojo.ArticleBlock;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ArticleBlockService {
@@ -20,4 +21,6 @@ public interface ArticleBlockService {
     long countArticleBlocksByArticleId(Long articleId);
     long countArticleBlocksByBlockType(String blockType);
     long countArticleBlocksByArticleIdAndBlockType(Long articleId, String blockType);
+    List<ArticleBlock> getArticleBlocksByArticleId(Long articleId);
+    boolean isValidArticleBlock(ArticleBlock articleBlock);
 }

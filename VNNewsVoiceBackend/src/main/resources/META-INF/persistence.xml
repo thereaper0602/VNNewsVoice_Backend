@@ -17,6 +17,12 @@
     <class>com.pmq.vnnewsvoice.pojo.UserInfo</class>
     <class>com.pmq.vnnewsvoice.pojo.Notification</class>
     <class>com.pmq.vnnewsvoice.pojo.Comment</class>
+    <class>com.pmq.vnnewsvoice.pojo.ArticleLike</class>
+    <class>com.pmq.vnnewsvoice.pojo.UserInfo</class>
+    <class>com.pmq.vnnewsvoice.pojo.CommentLike</class>
+    <class>com.pmq.vnnewsvoice.pojo.Articleblock</class>
+    <class>com.pmq.vnnewsvoice.pojo.NotificationRole</class>
+    <class>com.pmq.vnnewsvoice.pojo.UserProvider</class>
     <properties>
       <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/news"/>
       <property name="javax.persistence.jdbc.user" value="postgres"/>

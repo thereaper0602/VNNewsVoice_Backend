@@ -2,6 +2,7 @@ package com.pmq.vnnewsvoice.repository;
 
 import com.pmq.vnnewsvoice.pojo.ArticleBlock;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ArticleBlockRepository {
@@ -11,7 +12,7 @@ public interface ArticleBlockRepository {
     Optional<ArticleBlock> getArticleBlockByArticleId(Long articleId);
     Optional<ArticleBlock> getArticleBlockByArticleIdAndBlockId(Long articleId, Long blockId);
     Optional<ArticleBlock> getArticleBlockByArticleIdAndBlockType(Long articleId, String blockType);
-
+    List<ArticleBlock> getArticleBlocksByArticleId(Long articleId);
     Optional<ArticleBlock> updateArticleBlock(ArticleBlock articleBlock);
 
     boolean deleteArticleBlock(Long id);

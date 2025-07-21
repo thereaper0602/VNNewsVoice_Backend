@@ -49,7 +49,7 @@ public class UserProvider implements Serializable {
     private String providerType;
     @Lob
     @Column(name = "provider_data", columnDefinition = "jsonb")
-    private String providerData;
+    private Object providerData;
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
@@ -94,11 +94,11 @@ public class UserProvider implements Serializable {
         this.providerType = providerType;
     }
 
-    public String getProviderData() {
+    public Object getProviderData() {
         return providerData;
     }
 
-    public void setProviderData(String providerData) {
+    public void setProviderData(Object providerData) {
         this.providerData = providerData;
     }
 
@@ -140,7 +140,7 @@ public class UserProvider implements Serializable {
 
     @Override
     public String toString() {
-        return "com.pmq.vnnewsvoice.pojo.Userprovider[ id=" + id + " ]";
+        return "com.pmq.vnnewsvoice.pojo.UserProvider[ id=" + id + " ]";
     }
     
 }

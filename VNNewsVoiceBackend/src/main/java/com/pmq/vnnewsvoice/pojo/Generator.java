@@ -18,7 +18,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -33,7 +33,10 @@ import java.util.Set;
     @NamedQuery(name = "Generator.findByName", query = "SELECT g FROM Generator g WHERE g.name = :name"),
     @NamedQuery(name = "Generator.findByLogoUrl", query = "SELECT g FROM Generator g WHERE g.logoUrl = :logoUrl"),
     @NamedQuery(name = "Generator.findByUrl", query = "SELECT g FROM Generator g WHERE g.url = :url"),
-    @NamedQuery(name = "Generator.findByLastTimeCrawled", query = "SELECT g FROM Generator g WHERE g.lastTimeCrawled = :lastTimeCrawled")})
+    @NamedQuery(name = "Generator.findByLastTimeCrawled", query = "SELECT g FROM Generator g WHERE g.lastTimeCrawled = :lastTimeCrawled"),
+    @NamedQuery(name = "Generator.findByRssUrl", query = "SELECT g FROM Generator g WHERE g.rssUrl = :rssUrl"),
+    @NamedQuery(name = "Generator.findByIsActive", query = "SELECT g FROM Generator g WHERE g.isActive = :isActive"),
+    @NamedQuery(name = "Generator.findByCrawlIntervalMinutes", query = "SELECT g FROM Generator g WHERE g.crawlIntervalMinutes = :crawlIntervalMinutes")})
 public class Generator implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -51,7 +54,14 @@ public class Generator implements Serializable {
     @Column(name = "url")
     private String url;
     @Column(name = "last_time_crawled")
-    private LocalDateTime lastTimeCrawled;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date lastTimeCrawled;
+    @Column(name = "rss_url")
+    private String rssUrl;
+    @Column(name = "is_active")
+    private Boolean isActive;
+    @Column(name = "crawl_interval_minutes")
+    private Integer crawlIntervalMinutes;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "generatorId")
     private Set<Article> articleSet;
 
@@ -100,12 +110,36 @@ public class Generator implements Serializable {
         this.url = url;
     }
 
-    public LocalDateTime getLastTimeCrawled() {
+    public Date getLastTimeCrawled() {
         return lastTimeCrawled;
     }
 
-    public void setLastTimeCrawled(LocalDateTime lastTimeCrawled) {
+    public void setLastTimeCrawled(Date lastTimeCrawled) {
         this.lastTimeCrawled = lastTimeCrawled;
+    }
+
+    public String getRssUrl() {
+        return rssUrl;
+    }
+
+    public void setRssUrl(String rssUrl) {
+        this.rssUrl = rssUrl;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public Integer getCrawlIntervalMinutes() {
+        return crawlIntervalMinutes;
+    }
+
+    public void setCrawlIntervalMinutes(Integer crawlIntervalMinutes) {
+        this.crawlIntervalMinutes = crawlIntervalMinutes;
     }
 
     public Set<Article> getArticleSet() {

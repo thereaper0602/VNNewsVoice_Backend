@@ -262,7 +262,7 @@ public class UserInfo implements Serializable {
 
     @Override
     public String toString() {
-        return "com.pmq.vnnewsvoice.pojo.Userinfo[ id=" + id + " ]";
+        return "com.pmq.vnnewsvoice.pojo.UserInfo[ id=" + id + " ]";
     }
     
 }
