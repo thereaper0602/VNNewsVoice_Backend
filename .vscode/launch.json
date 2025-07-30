@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-VnNewsVoiceBackendApplication<VNNewsVoiceBackend>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.pmq.vnnewsvoice.VnNewsVoiceBackendApplication",
+            "projectName": "VNNewsVoiceBackend",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

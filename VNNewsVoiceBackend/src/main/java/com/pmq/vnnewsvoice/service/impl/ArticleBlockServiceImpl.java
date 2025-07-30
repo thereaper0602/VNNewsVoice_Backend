@@ -103,7 +103,7 @@ public class ArticleBlockServiceImpl implements ArticleBlockService {
 
     @Override
     public List<ArticleBlock> getArticleBlocksByArticleId(Long articleId) {
-        if(articleId == null){
+        if(articleId <= 0 || articleId == null){
             return List.of();
         }
         return articleBlockRepository.getArticleBlocksByArticleId(articleId);
@@ -133,7 +133,7 @@ public class ArticleBlockServiceImpl implements ArticleBlockService {
         }
 
         if("image".equals(articleBlock.getType())){
-            if(articleBlock.getAlt() == null || articleBlock.getSrc() == null){
+            if(articleBlock.getAlt() == null && articleBlock.getSrc() == null){
                 return false;
             }
         }

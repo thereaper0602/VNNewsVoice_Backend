@@ -1,0 +1,363 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6" layout:decorate="~{layout}">
+
+<th:block layout:fragment="pagetitle">
+    <div th:replace="~{partials/title-meta :: title-meta('Articles')}"></div>
+</th:block>
+<head>
+    <th:block layout:fragment="head-css">
+        <style>
+            /* CSS cho phần hiển thị bài viết */
+            .article-detail-admin {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .article-info {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+
+            .article-info h1 {
+                font-size: 28px;
+                margin-bottom: 15px;
+            }
+
+            .meta-info {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
+                font-size: 14px;
+                color: #666;
+            }
+
+            .source-info {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .source-logo {
+                width: 24px;
+                height: 24px;
+                object-fit: contain;
+            }
+
+            .editor-assignment {
+                background-color: #f8f9fa;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 30px;
+            }
+
+            .article-preview {
+                margin-bottom: 30px;
+            }
+
+            .article-preview h3 {
+                text-align: center;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #eee;
+            }
+
+            .article-blocks {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 25px;
+            }
+
+            .article-block {
+                width: 100%;
+                max-width: 700px;
+                margin-bottom: 5px;
+            }
+
+            /* Định dạng cho block loại paragraph */
+            .article-block.paragraph {
+                line-height: 1.6;
+                font-size: 16px;
+                text-align: justify;
+            }
+
+            /* Định dạng cho block loại image */
+            .article-block.image {
+                text-align: center;
+            }
+
+            .article-block.image img {
+                max-width: 100%;
+                height: auto;
+                border-radius: 4px;
+                margin-bottom: 8px;
+            }
+
+            .article-block.image .caption {
+                font-size: 14px;
+                color: #666;
+                font-style: italic;
+            }
+
+            /* Định dạng cho block loại heading */
+            .article-block.heading {
+                margin-top: 10px;
+                margin-bottom: 15px;
+            }
+
+            .article-block.heading h2 {
+                font-size: 22px;
+                font-weight: 600;
+                color: #333;
+            }
+
+            .article-block.heading h3 {
+                font-size: 20px;
+                font-weight: 600;
+                color: #444;
+            }
+
+            .action-buttons {
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin-top: 30px;
+            }
+            
+            /* CSS cho phần chuyển đổi trạng thái */
+            .status-management {
+                background-color: #f8f9fa;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 30px;
+            }
+            
+            .status-management h3 {
+                margin-bottom: 15px;
+            }
+            
+            .current-status {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 15px;
+            }
+            
+            .status-badge {
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-weight: 500;
+            }
+            
+            .status-badge.draft {
+                background-color: #e2e3e5;
+                color: #383d41;
+            }
+            
+            .status-badge.pending {
+                background-color: #fff3cd;
+                color: #856404;
+            }
+            
+            .status-badge.published {
+                background-color: #d4edda;
+                color: #155724;
+            }
+            
+            .status-badge.rejected {
+                background-color: #f8d7da;
+                color: #721c24;
+            }
+            
+            /* CSS cho phần hiển thị tóm tắt và audio */
+            .summary-section, .audio-section {
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                margin-bottom: 30px;
+            }
+            
+            .summary-content, .audio-content {
+                background-color: #ffffff;
+                border: 1px solid #e9ecef;
+            }
+            
+            .audio-player-container {
+                width: 100%;
+            }
+            
+            .audio-player-container audio {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        </style>
+    </th:block>
+</head>
+<body>
+<div layout:fragment="content">
+    <div th:replace="~{partials/page-title :: page-title('VN news','Articles')}"></div>
+
+    <!-- Alert Messages -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="alert alert-success alert-dismissible fade show" role="alert" th:if="${success != null}">
+                <i class="ri-check-double-line me-1 align-middle"></i> <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert" th:if="${error != null}">
+                <i class="ri-error-warning-line me-1 align-middle"></i> <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="article-detail-admin">
+        <!-- Thông tin cơ bản của bài viết -->
+        <div class="article-info">
+            <h1 th:text="${article.title}">Tiêu đề bài viết</h1>
+            <div class="meta-info">
+                <div class="source-info" th:if="${article.generatorId != null}">
+                    <img th:if="${article.generatorId.logoUrl != null}" th:src="${article.generatorId.logoUrl}" alt="Source Logo" class="source-logo">
+                    <span th:text="${article.generatorId.name}">Nguồn</span>
+                </div>
+                <div class="date-info">
+                    <i class="ri-calendar-line"></i>
+                    <span th:text="${#dates.format(article.publishedDate, 'dd MMM yyyy')}">Ngày đăng</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Phần quản lý trạng thái bài viết -->
+        <div class="status-management">
+            <h3>Trạng thái bài viết</h3>
+            <div class="current-status">
+                <span>Trạng thái hiện tại:</span>
+                <span th:switch="${article.status}" class="status-badge" th:classappend="${article.status.toString().toLowerCase()}">
+                    <span th:case="'DRAFT'">Draft</span>
+                    <span th:case="'PENDING'">Pending</span>
+                    <span th:case="'PUBLISHED'">Published</span>
+                    <span th:case="'REJECTED'">Rejected</span>
+                    <span th:case="*" th:text="${article.status}"></span>
+                </span>
+            </div>
+            
+            <!-- Form chuyển đổi trạng thái -->
+            <form th:action="@{'/admin/articles/' + ${article.slug} + '_' + ${article.id} + '/change-status'}" method="post" th:if="${!article.isBeingEdited}">
+                <div class="mb-3">
+                    <label for="statusSelect" class="form-label">Chuyển đổi trạng thái:</label>
+                    <select id="statusSelect" name="status" class="form-select">
+                        <option value="">Chọn trạng thái mới</option>
+                        <option value="DRAFT" th:selected="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT}">Draft</option>
+                        <option value="PENDING" th:selected="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).PENDING}">Pending</option>
+                        <option value="PUBLISHED" th:selected="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).PUBLISHED}">Published</option>
+                        <option value="REJECTED" th:selected="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED}">Rejected</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Cập nhật trạng thái</button>
+            </form>
+            
+            <!-- Thông báo khi bài viết đang được chỉnh sửa -->
+            <div class="alert alert-warning" th:if="${article.isBeingEdited}">
+                <i class="ri-information-line me-1"></i> Bài viết đang được chỉnh sửa. Không thể thay đổi trạng thái.
+            </div>
+        </div>
+        
+        <!-- Phần quản lý Editor -->
+        <div class="editor-assignment">
+            <h3>Phân công Editor</h3>
+            <form th:action="@{'/admin/articles/' + ${article.slug} + '_' + ${article.id} + '/assign-editor'}" method="post" th:if="${!article.isBeingEdited}">
+                <select name="editorId" class="form-select">
+                    <option value="">Chọn Editor</option>
+                    <option th:each="editor : ${editors}" th:value="${editor.id}" th:text="${editor.userId.username}" th:selected="${article.editorId != null && article.editorId.id == editor.id}"></option>
+                </select>
+                <button type="submit" class="btn btn-primary mt-2">Phân công</button>
+            </form>
+            
+            <!-- Thông báo khi bài viết đang được chỉnh sửa -->
+            <div class="alert alert-warning" th:if="${article.isBeingEdited}">
+                <i class="ri-information-line me-1"></i> Bài viết đang được chỉnh sửa. Không thể thay đổi editor.
+            </div>
+        </div>
+        
+        <!-- Phần hiển thị tóm tắt bài viết -->
+        <div class="summary-section mt-4 mb-4 p-3 border rounded">
+            <h3>Tóm tắt bài viết</h3>
+            <div class="summary-content p-3 bg-light rounded mb-3">
+                <p th:if="${article.summary != null && !article.summary.isEmpty()}" th:text="${article.summary}"></p>
+                <p class="text-muted" th:unless="${article.summary != null && !article.summary.isEmpty()}">Chưa có tóm tắt cho bài viết này.</p>
+            </div>
+        </div>
+        
+        <!-- Phần hiển thị audio bài viết -->
+        <div class="audio-section mt-4 mb-4 p-3 border rounded">
+            <h3>Audio bài viết</h3>
+            <div class="audio-content p-3 bg-light rounded mb-3">
+                <div th:if="${article.audioUrl != null && !article.audioUrl.isEmpty()}" class="audio-player-container">
+                    <audio controls class="w-100 mb-2">
+                        <source th:src="${article.audioUrl}" type="audio/wav">
+                        Trình duyệt của bạn không hỗ trợ phát audio.
+                    </audio>
+                    <p class="text-muted small">URL: <span th:text="${article.audioUrl}"></span></p>
+                </div>
+                <p class="text-muted" th:unless="${article.audioUrl != null && !article.audioUrl.isEmpty()}">Chưa có audio cho bài viết này.</p>
+            </div>
+        </div>
+        
+        <!-- Xem trước nội dung (không chỉnh sửa) -->
+        <div class="article-preview">
+            <h3>Xem trước nội dung</h3>
+            <div class="article-blocks">
+                <!-- Hiển thị các block theo loại -->
+                <div th:each="block : ${articleBlocks}" class="article-block" th:classappend="${block.type}">
+                    <!-- Block loại paragraph -->
+                    <div th:if="${block.type == 'paragraph'}" th:utext="${block.content}" class="text-block"></div>
+                    
+                    <!-- Block loại image -->
+                    <div th:if="${block.type == 'image'}" class="image-block">
+                        <img th:src="${block.src}" th:alt="${block.alt}">
+                        <p th:if="${block.caption != null && !block.caption.isEmpty()}" class="caption" th:text="${block.caption}"></p>
+                    </div>
+                    
+                    <!-- Block loại heading -->
+                    <div th:if="${block.type == 'heading'}" class="heading-block">
+                        <h1 th:if="${block.tag == 'h1' || block.tag == null}" th:text="${block.text}"></h1>
+                        <h2 th:if="${block.tag == 'h2' || block.tag == null}" th:text="${block.text}"></h2>
+                        <h3 th:if="${block.tag == 'h3'}" th:text="${block.text}"></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Các nút hành động -->
+        <div class="action-buttons">
+            <a th:href="@{'/admin/articles'}" class="btn btn-secondary">Quay lại</a>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">Xóa bài viết</button>
+        </div>
+
+    </div>
+
+    <!-- Thêm modal xóa bài viết vào đây -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Xác nhận xóa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Bạn có chắc chắn muốn xóa bài viết "<span th:text="${article.title}"></span>" không?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <form th:action="@{'/admin/articles/' + ${article.id} + '/delete'}" method="post">
+                        <button type="submit" class="btn btn-danger">Xác nhận xóa</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

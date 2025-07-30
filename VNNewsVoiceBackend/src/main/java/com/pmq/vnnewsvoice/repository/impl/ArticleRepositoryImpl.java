@@ -11,6 +11,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,7 +47,7 @@ public class ArticleRepositoryImpl implements ArticleRepository {
 
     @Override
     public List<Article> getArticlesByCategoryId(Long categoryId) {
-        String hql = "FROM Article a WHERE a.categoryId.id = :categoryId";
+        String hql = "FROM Article a WHERE a.categoryId.id = :categoryId ORDER BY a.publishedDate DESC";
         return entityManager.createQuery(hql, Article.class)
                 .setParameter("categoryId", categoryId)
                 .getResultList();
@@ -63,6 +65,8 @@ public class ArticleRepositoryImpl implements ArticleRepository {
         if (!predicates.isEmpty()) {
             query.where(predicates.toArray(new Predicate[0]));
         }
+        // Sort by publishedDate in descending order
+        query.orderBy(builder.desc(root.get("publishedDate")));
 
         jakarta.persistence.TypedQuery<Article> q = entityManager.createQuery(query);
 
@@ -92,6 +96,7 @@ public class ArticleRepositoryImpl implements ArticleRepository {
         if (!predicates.isEmpty()) {
             query.where(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         }
+        query.orderBy(builder.desc(root.get("publishedDate")));
 
         jakarta.persistence.TypedQuery<Article> q = entityManager.createQuery(query);
 
@@ -122,7 +127,9 @@ public class ArticleRepositoryImpl implements ArticleRepository {
     public boolean deleteArticle(Long id) {
         Article article = entityManager.find(Article.class, id);
         if (article != null) {
-            entityManager.remove(article);
+            article.setDeletedAt(new Date());
+            article.setIsActive(false);
+            entityManager.merge(article);
             return true;
         }
         return false;
@@ -157,16 +164,33 @@ public class ArticleRepositoryImpl implements ArticleRepository {
         if (filters != null) {
             if(filters.containsKey("title")) {
                 String title = filters.get("title");
-                predicates.add(builder.like(root.get("title"), "%" + title + "%"));
+                predicates.add(builder.like(
+                        builder.lower(root.get("title")),
+                        "%" + title.toLowerCase() + "%"
+                ));
             }
-            if (filters.containsKey("categoryId")) {
-                Long categoryId = Long.parseLong(filters.get("categoryId"));
-                predicates.add(builder.equal(root.get("categoryId").get("id"), categoryId));
+            if (filters.containsKey("categoryId") && !filters.get("categoryId").isEmpty()) {
+                String categoryIdStr = filters.get("categoryId");
+                if (categoryIdStr != null && !categoryIdStr.isEmpty()) {
+                    Long categoryId = Long.parseLong(categoryIdStr);
+                    predicates.add(builder.equal(root.get("categoryId").get("id"), categoryId));
+                }
             }
 
-            if (filters.containsKey("author")) {
+            if (filters.containsKey("author") && !filters.get("author").isEmpty()) {
                 String author = filters.get("author");
-                predicates.add(builder.like(root.get("author"), "%" + author + "%"));
+                predicates.add(builder.like(
+                        builder.lower(root.get("author")),
+                        "%" + author.toLowerCase() + "%"
+                ));
+            }
+
+            if(filters.containsKey("slug")) {
+                String slug = filters.get("slug");
+                predicates.add(builder.equal(
+                        builder.lower(root.get("slug")),
+                        slug.toLowerCase()
+                ));
             }
 
             if (filters.containsKey("isActive")) {
@@ -180,9 +204,43 @@ public class ArticleRepositoryImpl implements ArticleRepository {
             }
 
             if (filters.containsKey("generatorId")) {
-                Long generatorId = Long.parseLong(filters.get("generatorId"));
-                predicates.add(builder.equal(root.get("generatorId").get("id"), generatorId));
+                String generatorIdStr = filters.get("generatorId");
+                if (generatorIdStr != null && !generatorIdStr.isEmpty()) {
+                    Long generatorId = Long.parseLong(generatorIdStr);
+                    predicates.add(builder.equal(root.get("generatorId").get("id"), generatorId));
+                }
             }
+
+            if(filters.containsKey("fromDate") && filters.containsKey("toDate")) {
+                String fromDate = filters.get("fromDate");
+                String toDate = filters.get("toDate");
+                predicates.add(builder.between(
+                        root.get("publishedDate"),
+                        java.sql.Date.valueOf(fromDate),
+                        java.sql.Date.valueOf(toDate)
+                ));
+            }
+
+            if(filters.containsKey("publishedDates") && !filters.get("publishedDates").isEmpty()) {
+                int days = Integer.parseInt(filters.get("publishedDates"));
+                Calendar calendar = Calendar.getInstance();
+                Date endDate = calendar.getTime();
+
+                calendar.add(Calendar.DAY_OF_YEAR, -days);
+                Date startDate = calendar.getTime();
+
+                predicates.add(builder.between(
+                    root.get("publishedDate"),
+                    new java.sql.Date(startDate.getTime()),
+                    new java.sql.Date(endDate.getTime())
+                ));
+            }
+
+            if (filters.containsKey("status") && !filters.get("status").isEmpty()) {
+                String status = filters.get("status");
+                predicates.add(builder.equal(root.get("status"), status));
+            }
+
         }
 
         return predicates;

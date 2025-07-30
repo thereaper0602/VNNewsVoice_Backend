@@ -1,82 +1,124 @@
 package com.pmq.vnnewsvoice.service.impl;
 
 import com.pmq.vnnewsvoice.pojo.UserInfo;
+import com.pmq.vnnewsvoice.repository.UserInfoRepository;
 import com.pmq.vnnewsvoice.service.UserInfoService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-@Service
+import java.util.*;
+
+@Service("userDetaiService")
+@Transactional
 public class UserInfoServiceImpl implements UserInfoService {
+
+    @Autowired
+    private UserInfoRepository userInfoRepository;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
     @Override
-    public UserInfo addUser(UserInfo Userinfo) {
-        return null;
+    public UserInfo addUser(UserInfo userinfo) {
+        if (    userinfo == null ||
+                userinfo.getUsername().isEmpty() ||
+                userinfo.getPassword().isEmpty() ||
+                userinfo.getPhoneNumber().isEmpty()){
+            return null;
+        }
+        userinfo.setPassword(passwordEncoder.encode(userinfo.getPassword()));
+        // Xử lý upload cloudinary ở đây
+
+        return userInfoRepository.addUser(userinfo);
     }
+
+    // Thêm phương thức process avatar ở đây
+
+
 
     @Override
     public Optional<UserInfo> getUserById(Long id) {
-        return Optional.empty();
+        if(id <= 0 || id == null){
+            return Optional.of(null);
+        }
+        return userInfoRepository.getUserById(id);
     }
 
     @Override
     public Optional<UserInfo> getUserByUsername(String username) {
-        return Optional.empty();
+        if(username.isEmpty()){
+            return Optional.of(null);
+        }
+        return userInfoRepository.getUserByUsername(username);
     }
 
     @Override
     public List<UserInfo> getUsers(Map<String, String> params) {
-        return List.of();
-    }
-
-    @Override
-    public List<UserInfo> getUsersByRole(String roleName) {
-        return List.of();
+        return userInfoRepository.getUsers(params);
     }
 
     @Override
     public List<UserInfo> searchUsers(Map<String, String> filters, Map<String, String> params) {
-        return List.of();
+        return userInfoRepository.searchUsers(filters,params);
+    }
+
+
+    @Override
+    public boolean updateUser(UserInfo userinfo) {
+        if(userinfo == null || getUserById(userinfo.getId()) == null){
+            return false;
+        }
+        return userInfoRepository.updateUser(userinfo);
     }
 
     @Override
-    public List<UserInfo> getActiveUsers(Map<String, String> params) {
-        return List.of();
-    }
-
-    @Override
-    public Optional<UserInfo> updateUser(UserInfo Userinfo) {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<UserInfo> deleteUser(Long id) {
-        return Optional.empty();
+    public boolean deleteUser(Long id) {
+        if (getUserById(id).isEmpty()){
+            return false;
+        }
+        return userInfoRepository.deleteUser(id);
     }
 
     @Override
     public long countUsers(Map<String, String> params) {
-        return 0;
+        return userInfoRepository.countUsers(params);
     }
 
-    @Override
-    public long countUsersByRole(String roleName) {
-        return 0;
-    }
 
     @Override
     public long countSearchUsers(Map<String, String> filters, Map<String, String> params) {
-        return 0;
+        return userInfoRepository.countSearchUsers(filters,params);
     }
 
-    @Override
-    public long countActiveUsers(Map<String, String> params) {
-        return 0;
-    }
 
     @Override
     public boolean authenticateUser(String username, String password) {
-        return false;
+        if(username == null || password == null){
+            return false;
+        }
+        return userInfoRepository.authenticateUser(username, password);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Optional<UserInfo> u = getUserByUsername(username);
+        if(u.isEmpty()){
+            throw new UsernameNotFoundException("Invalid username!");
+        }
+
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        authorities.add(new SimpleGrantedAuthority(u.get().getRoleId().getName()));
+
+        return new User(u.get().getUsername(), u.get().getPassword(), authorities);
     }
 }

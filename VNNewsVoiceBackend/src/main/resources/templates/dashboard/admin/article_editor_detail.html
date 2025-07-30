@@ -1,0 +1,1155 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6" layout:decorate="~{layout}">
+
+<th:block layout:fragment="pagetitle">
+    <div th:replace="~{partials/title-meta :: title-meta('Chỉnh sửa bài viết')}"></div>
+</th:block>
+
+<head>
+    <th:block layout:fragment="head-css">
+        <style>
+            /* CSS cho phần hiển thị bài viết */
+            .article-detail-editor {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .article-info {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+
+            .article-info h1 {
+                font-size: 28px;
+                margin-bottom: 15px;
+            }
+
+            .meta-info {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
+                font-size: 14px;
+                color: #666;
+            }
+
+            .source-info {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .source-logo {
+                width: 24px;
+                height: 24px;
+                object-fit: contain;
+            }
+
+            .article-content {
+                margin-bottom: 30px;
+            }
+
+            .article-content h3 {
+                text-align: center;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #eee;
+            }
+
+            .article-blocks {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 25px;
+            }
+
+            .article-block {
+                width: 100%;
+                max-width: 700px;
+                margin-bottom: 5px;
+                position: relative;
+                padding: 15px;
+                border: 1px solid transparent;
+                border-radius: 8px;
+                transition: all 0.3s ease;
+            }
+
+            .article-block:hover {
+                border-color: #e0e0e0;
+                background-color: #f9f9f9;
+            }
+
+            .edit-block-btn {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                padding: 5px 10px;
+                font-size: 14px;
+                color: #495057;
+                cursor: pointer;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .article-block:hover .edit-block-btn {
+                opacity: 1;
+            }
+
+            /* CSS cho modal căn giữa */
+            .modal-dialog-centered {
+                display: flex;
+                align-items: center;
+                min-height: calc(100% - 1rem);
+            }
+
+            /* CSS cho toast notification */
+            .toast-container {
+                z-index: 1060;
+            }
+
+            .toast {
+                background-color: white;
+                color: #333;
+                box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+            }
+
+            /* Định dạng cho block loại paragraph */
+            .article-block.paragraph {
+                line-height: 1.6;
+                font-size: 16px;
+                text-align: justify;
+            }
+
+            /* Định dạng cho block loại image */
+            .article-block.image {
+                text-align: center;
+            }
+
+            .article-block.image img {
+                max-width: 100%;
+                height: auto;
+                border-radius: 4px;
+                margin-bottom: 8px;
+            }
+
+            .article-block.image .caption {
+                font-size: 14px;
+                color: #666;
+                font-style: italic;
+            }
+
+            /* Định dạng cho block loại heading */
+            .article-block.heading {
+                margin-top: 10px;
+                margin-bottom: 15px;
+            }
+
+            .article-block.heading h2 {
+                font-size: 22px;
+                font-weight: 600;
+                color: #333;
+            }
+
+            .article-block.heading h3 {
+                font-size: 20px;
+                font-weight: 600;
+                color: #444;
+            }
+
+            .action-buttons {
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin-top: 30px;
+            }
+
+            /* CSS cho modal chỉnh sửa */
+            .edit-form-group {
+                margin-bottom: 15px;
+            }
+
+            .edit-form-group label {
+                font-weight: 500;
+                margin-bottom: 5px;
+                display: block;
+            }
+
+            .edit-form-group textarea {
+                min-height: 120px;
+            }
+
+            .edit-form-group input[type="text"] {
+                width: 100%;
+            }
+
+            .image-preview {
+                margin-top: 10px;
+                text-align: center;
+            }
+
+            .image-preview img {
+                max-width: 100%;
+                max-height: 200px;
+                border-radius: 4px;
+            }
+
+            /* CSS để căn giữa modal */
+            .modal-dialog {
+                display: flex;
+                align-items: center;
+                min-height: calc(100% - 3.5rem);
+            }
+
+            /* Toast notification */
+            .toast-container {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1060;
+            }
+
+            .toast {
+                min-width: 250px;
+            }
+
+
+            /* CSS cho phần tóm tắt bài viết mới */
+            .summary-section {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                padding: 20px;
+            }
+
+            .summary-heading {
+                color: #495057;
+                font-weight: 600;
+                margin-bottom: 15px;
+            }
+
+            .summary-content {
+                background-color: white;
+                border: 1px solid #e9ecef;
+                min-height: 100px;
+                border-radius: 6px;
+                padding: 15px;
+            }
+
+            .summary-actions {
+                display: flex;
+                justify-content: flex-start;
+                margin-top: 15px;
+            }
+
+            .summary-loading {
+                padding: 20px 0;
+                text-align: center;
+            }
+        </style>
+    </th:block>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div th:replace="~{partials/page-title :: page-title('VN news','Chỉnh sửa bài viết')}"></div>
+
+        <!-- Alert Messages -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="alert alert-success alert-dismissible fade show" role="alert" th:if="${success != null}">
+                    <i class="ri-check-double-line me-1 align-middle"></i> <span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert" th:if="${error != null}">
+                    <i class="ri-error-warning-line me-1 align-middle"></i> <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="article-detail-editor">
+            <!-- Thông tin cơ bản của bài viết -->
+            <div class="article-info">
+                <h1 th:text="${article.title}">Tiêu đề bài viết</h1>
+                <div class="meta-info">
+                    <div class="source-info" th:if="${article.generatorId != null}">
+                        <img th:if="${article.generatorId.logoUrl != null}" th:src="${article.generatorId.logoUrl}"
+                            alt="Source Logo" class="source-logo">
+                        <span th:text="${article.generatorId.name}">Nguồn</span>
+                    </div>
+                    <div class="date-info">
+                        <i class="ri-calendar-line"></i>
+                        <span th:text="${#dates.format(article.publishedDate, 'dd MMM yyyy')}">Ngày đăng</span>
+                    </div>
+                </div>
+
+
+                <!-- Thông báo trạng thái chỉnh sửa -->
+                <!-- Thông báo trạng thái chỉnh sửa -->
+                <div class="edit-status mt-3">
+                    <!-- Thông báo khi đang chỉnh sửa -->
+                    <div class="alert alert-info" th:if="${article.isBeingEdited}">
+                        <i class="ri-information-line me-1"></i> Bài viết đang trong trạng thái chỉnh sửa.
+                        <span th:if="${article.editStartedAt != null}">
+                            Bắt đầu chỉnh sửa: <span
+                                th:text="${#dates.format(article.editStartedAt, 'dd/MM/yyyy HH:mm')}"></span>
+                        </span>
+                    </div>
+
+                    <!-- Thông báo khi bài viết đang chờ phê duyệt -->
+                    <div class="alert alert-secondary"
+                        th:if="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).PENDING && !article.isBeingEdited}">
+                        <i class="ri-information-line me-1"></i> Bài viết đang trong trạng thái phê duyệt và không thể
+                        chỉnh sửa.
+                    </div>
+
+                    <!-- Thông báo khi bài viết bị từ chối -->
+                    <div class="alert alert-danger"
+                        th:if="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED && !article.isBeingEdited}">
+                        <i class="ri-information-line me-1"></i> Bài viết đã bị từ chối. Vui lòng bắt đầu chỉnh sửa để
+                        khắc phục.
+                    </div>
+
+                    <!-- Thông báo khi bài viết ở trạng thái nháp và chưa chỉnh sửa -->
+                    <div class="alert alert-warning"
+                        th:if="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT && !article.isBeingEdited}">
+                        <i class="ri-information-line me-1"></i> Bạn cần bắt đầu chỉnh sửa trước khi thực hiện thay đổi.
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Nội dung bài viết với khả năng chỉnh sửa -->
+            <div class="article-content">
+                <h3>Nội dung bài viết</h3>
+                <div class="article-blocks">
+                    <!-- Hiển thị các block theo loại -->
+                    <div th:each="block, blockStat : ${articleBlocks}" class="article-block"
+                        th:classappend="${block.type}" th:id="'block-' + ${block.id}">
+                        <!-- Nút chỉnh sửa block -->
+                        <button type="button" class="edit-block-btn" th:data-block-id="${block.id}"
+                            th:data-block-type="${block.type}" data-bs-toggle="modal"
+                            th:data-bs-target="'#editBlockModal-' + ${block.id}">
+                            <i class="ri-edit-line"></i> Sửa
+                        </button>
+
+                        <!-- Block loại paragraph -->
+                        <div th:if="${block.type == 'paragraph'}" th:utext="${block.content}" class="text-block"></div>
+
+                        <!-- Block loại image -->
+                        <div th:if="${block.type == 'image'}" class="image-block">
+                            <img th:src="${block.src}" th:alt="${block.alt}">
+                            <p th:if="${block.caption != null && !block.caption.isEmpty()}" class="caption"
+                                th:text="${block.caption}"></p>
+                        </div>
+
+                        <!-- Block loại heading -->
+                        <div th:if="${block.type == 'heading'}" class="heading-block">
+                            <h2 th:if="${block.tag == 'h2' || block.tag == null}" th:text="${block.text}"></h2>
+                            <h3 th:if="${block.tag == 'h3'}" th:text="${block.text}"></h3>
+                        </div>
+
+                        <!-- Modal chỉnh sửa cho từng block -->
+                        <div class="modal fade" th:id="'editBlockModal-' + ${block.id}" tabindex="-1"
+                            th:aria-labelledby="'editBlockModalLabel-' + ${block.id}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" th:id="'editBlockModalLabel-' + ${block.id}"
+                                            th:text="'Chỉnh sửa ' + ${block.type}">Chỉnh sửa block</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <!-- Form chỉnh sửa cho block loại paragraph -->
+                                        <div th:if="${block.type == 'paragraph'}" class="edit-form-group">
+                                            <label for="context">Nội dung</label>
+                                            <textarea class="form-control block-content"
+                                                th:id="'content-' + ${block.id}" name="content"
+                                                th:text="${block.content}"></textarea>
+                                        </div>
+
+                                        <!-- Form chỉnh sửa cho block loại image -->
+                                        <div th:if="${block.type == 'image'}">
+                                            <div class="edit-form-group">
+                                                <label for="src">Đường dẫn ảnh</label>
+                                                <input type="text" class="form-control block-src"
+                                                    th:id="'src-' + ${block.id}" name="src" th:value="${block.src}">
+                                            </div>
+                                            <div class="edit-form-group">
+                                                <label for="alt">Mô tả ảnh (alt)</label>
+                                                <input type="text" class="form-control block-alt"
+                                                    th:id="'alt-' + ${block.id}" name="alt" th:value="${block.alt}">
+                                            </div>
+                                            <div class="edit-form-group">
+                                                <label for="caption">Chú thích ảnh</label>
+                                                <input type="text" class="form-control block-caption"
+                                                    th:id="'caption-' + ${block.id}" name="caption"
+                                                    th:value="${block.caption}">
+                                            </div>
+                                            <div class="image-preview">
+                                                <p>Xem trước ảnh:</p>
+                                                <img th:src="${block.src}" alt="Preview"
+                                                    th:id="'imagePreview-' + ${block.id}">
+                                            </div>
+                                        </div>
+
+                                        <!-- Form chỉnh sửa cho block loại heading -->
+                                        <div th:if="${block.type == 'heading'}" class="edit-form-group">
+                                            <label for="text">Nội dung tiêu đề</label>
+                                            <input type="text" class="form-control block-text"
+                                                th:id="'text-' + ${block.id}" name="text" th:value="${block.text}">
+                                            <input type="hidden" class="block-tag" th:id="'tag-' + ${block.id}"
+                                                name="tag" th:value="${block.tag}">
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy
+                                        </button>
+                                        <button type="button" class="btn btn-primary save-block-btn"
+                                            th:data-block-id="${block.id}" th:data-block-type="${block.type}"
+                                            data-bs-dismiss="modal">Lưu thay đổi
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Các nút hành động -->
+            <!-- Các nút hành động -->
+            <div class="action-buttons">
+                <a th:href="@{'/admin/articles'}" class="btn btn-secondary">Quay lại</a>
+
+                <!-- Nút bắt đầu chỉnh sửa: hiển thị khi chưa trong trạng thái chỉnh sửa và không phải đang chờ phê duyệt hoặc đã xuất bản -->
+                <form
+                    th:if="${!article.isBeingEdited && (article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT || article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED)}"
+                    th:action="@{'/admin/articles/' + ${article.slug} + '_' + ${article.id} + '/start-editing'}"
+                    method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-primary">Bắt đầu chỉnh sửa</button>
+                </form>
+
+                <!-- Nút lưu thay đổi: chỉ hiển thị khi đang trong trạng thái chỉnh sửa -->
+                <button th:if="${article.isBeingEdited}" type="button" class="btn btn-success" data-bs-toggle="modal"
+                    data-bs-target="#saveChangesModal">Lưu tất cả thay đổi
+                </button>
+
+                <!-- Nút yêu cầu duyệt bài: chỉ hiển thị khi đang chỉnh sửa và ở trạng thái nháp hoặc bị từ chối -->
+                <!-- Nút yêu cầu duyệt bài: chỉ hiển thị khi đang chỉnh sửa và ở trạng thái nháp hoặc bị từ chối -->
+                <button
+                    th:if="${article.isBeingEdited && (article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT || article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED)}"
+                    type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#submitArticleModal">
+                    Yêu cầu duyệt bài
+                </button>
+            </div>
+
+        </div>
+
+
+
+        <!-- Modal xác nhận yêu cầu duyệt bài -->
+        <div class="modal fade" id="submitArticleModal" tabindex="-1" aria-labelledby="submitArticleModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="submitArticleModalLabel">Xác nhận yêu cầu duyệt bài</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="ri-alert-line me-2"></i>
+                            <strong>Lưu ý quan trọng:</strong> Sau khi nộp bài để yêu cầu duyệt, bạn sẽ không thể chỉnh
+                            sửa bài viết này nữa cho đến khi nó được phê duyệt hoặc bị từ chối.
+                        </div>
+                        <div id="summary-warning" class="alert alert-danger d-none">
+                            <i class="ri-error-warning-line me-2"></i>
+                            <strong>Thiếu tóm tắt:</strong> Bạn cần tạo tóm tắt cho bài viết trước khi yêu cầu duyệt.
+                        </div>
+                        <div id="audio-warning" class="alert alert-danger d-none">
+                            <i class="ri-error-warning-line me-2"></i>
+                            <strong>Thiếu audio:</strong> Bạn cần tạo audio cho bài viết trước khi yêu cầu duyệt.
+                        </div>
+                        <p>Bạn có chắc chắn muốn nộp bài viết "<span th:text="${article.title}"></span>" để yêu cầu
+                            duyệt không?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <form id="submitArticleForm"
+                            th:action="@{'/admin/articles/' + ${article.slug} + '_' + ${article.id} + '/submit'}"
+                            method="post">
+                            <button id="confirmSubmitBtn" type="submit" class="btn btn-danger">Xác nhận nộp bài</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal xác nhận lưu tất cả thay đổi -->
+        <div class="modal fade" id="saveChangesModal" tabindex="-1" aria-labelledby="saveChangesModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="saveChangesModalLabel">Xác nhận lưu thay đổi</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Bạn có chắc chắn muốn lưu tất cả thay đổi cho bài viết "<span
+                            th:text="${article.title}"></span>" không?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-success" id="confirmSaveChanges"
+                            data-bs-dismiss="modal">Xác nhận lưu
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phần tóm tắt bài viết - chỉ hiển thị khi đang chỉnh sửa -->
+        <div th:if="${article.isBeingEdited}" class="summary-section mt-4 mb-4 p-3 border rounded">
+            <h4 class="summary-heading mb-3">Tóm tắt bài viết</h4>
+            <div id="summary-content" class="summary-content p-3 bg-light rounded mb-3">
+                <p class="text-muted" th:if="${article.summary}" th:text="${article.summary}"></p>
+                <p class="text-muted" th:unless="${article.summary}" th:text="${Chưa có tóm tắt. Nhấn nút /'Tạo tóm tắt/' để tạo tóm tắt tự động.}"></p>
+            </div>
+            <div id="summary-loading" class="summary-loading text-center d-none mb-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tạo tóm tắt...</span>
+                </div>
+                <p class="mt-2">Đang tạo tóm tắt...</p>
+            </div>
+            <div class="summary-actions">
+                <button id="generateSummaryBtn" class="btn btn-primary me-2">Tạo tóm tắt</button>
+                <button id="regenerateSummaryBtn" class="btn btn-outline-primary d-none">Tạo lại tóm tắt</button>
+            </div>
+        </div>
+
+        <!-- Phần tạo audio TTS - chỉ hiển thị khi đang chỉnh sửa -->
+        <div th:if="${article.isBeingEdited}" class="tts-section mt-4 mb-4 p-3 border rounded">
+            <h4 class="tts-heading mb-3">Tạo audio cho bài viết</h4>
+            <div id="tts-content" class="tts-content p-3 bg-light rounded mb-3">
+                <div th:if="${article.audioUrl}" class="audio-player-container">
+                    <audio id="tts-audio-player" controls class="w-100 mb-2">
+                        <source th:src="${article.audioUrl}" type="audio/wav">
+                        Trình duyệt của bạn không hỗ trợ phát audio.
+                    </audio>
+                    <p class="text-muted small">URL: <span id="current-audio-url" th:text="${article.audioUrl}"></span></p>
+                </div>
+                <p class="text-muted" th:unless="${article.audioUrl}">Chưa có audio. Nhấn nút 'Tạo audio' để tạo audio tự động.</p>
+            </div>
+            <div id="tts-loading" class="tts-loading text-center d-none mb-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tạo audio...</span>
+                </div>
+                <p class="mt-2">Đang tạo audio...</p>
+            </div>
+            <div class="tts-actions">
+                <button id="generateTTSBtn" class="btn btn-primary me-2">Tạo audio</button>
+                <button id="regenerateTTSBtn" class="btn btn-outline-primary me-2" th:classappend="${article.audioUrl} ? '' : 'd-none'">Tạo lại audio</button>
+                <button id="deleteTTSBtn" class="btn btn-outline-danger" th:classappend="${article.audioUrl} ? '' : 'd-none'">Xóa audio</button>
+            </div>
+        </div>
+
+        <!-- Toast notification container -->
+        <div class="toast-container position-fixed top-0 end-0 p-3">
+            <div id="saveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                    <strong class="me-auto">Thông báo</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body" id="toastMessage">
+                    Đã lưu thay đổi thành công!
+                </div>
+            </div>
+        </div>
+
+        <!-- JavaScript cho xem trước ảnh và xử lý lưu thay đổi -->
+        <th:block layout:fragment="pagejs">
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    // Lưu trữ các block đã chỉnh sửa
+                    let editedBlocks = [];
+                    // let currentSummary = '';
+                    // let hasSummary = false;
+
+                    // Kiểm tra trạng thái chỉnh sửa
+                    const isBeingEdited = [[${ article.isBeingEdited }]];
+
+                    // Vô hiệu hóa các nút chỉnh sửa nếu không trong trạng thái chỉnh sửa
+                    if (!isBeingEdited) {
+                        const editButtons = document.querySelectorAll('.edit-block-btn');
+                        editButtons.forEach(button => {
+                            button.disabled = true;
+                            button.style.opacity = 0;
+                            button.style.cursor = 'not-allowed';
+                            button.setAttribute('data-bs-toggle', '');
+                        });
+                    }
+
+                    // Xử lý xem trước ảnh khi thay đổi URL
+                    const imageInputs = document.querySelectorAll('.block-src');
+                    imageInputs.forEach(input => {
+                        input.addEventListener('input', function () {
+                            const blockId = this.id.split('-')[1];
+                            const previewImg = document.getElementById('imagePreview-' + blockId);
+                            if (previewImg) {
+                                previewImg.src = this.value;
+
+                                // Xử lý lỗi khi ảnh không tải được
+                                previewImg.onerror = function () {
+                                    this.src = 'https://via.placeholder.com/300x200?text=Ảnh+không+tồn+tại';
+                                };
+                            }
+                        });
+                    });
+
+                    // Xử lý sự kiện lưu thay đổi cho từng block
+                    const saveBlockButtons = document.querySelectorAll('.save-block-btn');
+                    saveBlockButtons.forEach(button => {
+                        button.addEventListener('click', function () {
+                            const blockId = this.getAttribute('data-block-id');
+                            const blockType = this.getAttribute('data-block-type');
+                            saveBlockChanges(blockId, blockType);
+                        });
+                    });
+
+                    // Xử lý sự kiện lưu tất cả thay đổi
+                    const saveAllButton = document.getElementById('confirmSaveChanges');
+                    saveAllButton.addEventListener('click', function () {
+                        saveAllChanges();
+                    });
+
+                    // Hàm lưu thay đổi cho từng block
+                    function saveBlockChanges(blockId, blockType) {
+                        let blockData = {
+                            id: blockId,
+                            type: blockType
+                        };
+
+                        // Lấy dữ liệu dựa trên loại block
+                        switch (blockType) {
+                            case 'paragraph':
+                                blockData.content = document.getElementById('content-' + blockId).value;
+                                // Cập nhật nội dung hiển thị ngay lập tức
+                                document.querySelector('#block-' + blockId + ' .text-block').innerHTML = blockData.content;
+                                break;
+                            case 'image':
+                                blockData.src = document.getElementById('src-' + blockId).value;
+                                blockData.alt = document.getElementById('alt-' + blockId).value;
+                                blockData.caption = document.getElementById('caption-' + blockId).value;
+                                // Cập nhật hình ảnh hiển thị ngay lập tức
+                                const imgElement = document.querySelector('#block-' + blockId + ' img');
+                                if (imgElement) imgElement.src = blockData.src;
+                                if (imgElement) imgElement.alt = blockData.alt;
+                                const captionElement = document.querySelector('#block-' + blockId + ' .caption');
+                                if (captionElement) captionElement.textContent = blockData.caption;
+                                break;
+                            case 'heading':
+                                blockData.text = document.getElementById('text-' + blockId).value;
+                                blockData.tag = document.getElementById('tag-' + blockId).value;
+                                // Cập nhật tiêu đề hiển thị ngay lập tức
+                                const headingElement = document.querySelector('#block-' + blockId + ' ' + (blockData.tag || 'h2'));
+                                if (headingElement) headingElement.textContent = blockData.text;
+                                break;
+                        }
+
+                        // Kiểm tra xem block đã được chỉnh sửa trước đó chưa
+                        const existingIndex = editedBlocks.findIndex(block => block.id === blockId);
+                        if (existingIndex !== -1) {
+                            // Cập nhật block đã tồn tại
+                            editedBlocks[existingIndex] = blockData;
+                        } else {
+                            // Thêm block mới vào danh sách đã chỉnh sửa
+                            editedBlocks.push(blockData);
+                        }
+
+                        console.log('Block đã được chỉnh sửa:', blockData);
+                        console.log('Danh sách các block đã chỉnh sửa:', editedBlocks);
+                    }
+
+                    // Hàm lưu tất cả thay đổi
+                    function saveAllChanges() {
+                        if (editedBlocks.length === 0) {
+                            showToast('Không có thay đổi nào để lưu!');
+                            return;
+                        }
+
+                        if (hasSummary) {
+                            editedBlocks.push({
+                                type: 'summary',
+                                content: currentSummary
+                            });
+                        }
+
+                        const articleSlug = document.location.pathname.split('/').slice(-1)[0].split('_')[0];
+                        const articleId = document.location.pathname.split('/').slice(-1)[0].split('_')[1];
+                        const url = '/admin/articles/' + articleSlug + '_' + articleId + '/save-all-changes';
+
+                        // Gửi request lưu tất cả thay đổi
+                        fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                blocks: editedBlocks,
+                                summary: hasSummary ? currentSummary : null
+                            })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    showToast(data.message || 'Đã lưu tất cả thay đổi thành công!');
+                                    // Làm mới trang sau 1 giây
+                                    setTimeout(() => {
+                                        window.location.reload();
+                                    }, 1000);
+                                } else {
+                                    showToast('Lỗi: ' + (data.message || 'Không thể lưu thay đổi'));
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                showToast('Lỗi kết nối: ' + error.message);
+                            });
+                    }
+
+                    // Hiển thị thông báo toast
+                    function showToast(message, type = 'success') {
+                        const toastEl = document.getElementById('saveToast');
+                        const toastMessage = document.getElementById('toastMessage');
+                        toastMessage.textContent = message;
+
+                        // Xóa các class cũ
+                        toastEl.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'text-white');
+
+                        // Thêm class mới dựa trên loại thông báo
+                        if (type === 'success') {
+                            toastEl.classList.add('bg-success', 'text-white');
+                        } else if (type === 'error') {
+                            toastEl.classList.add('bg-danger', 'text-white');
+                        } else if (type === 'warning') {
+                            toastEl.classList.add('bg-warning', 'text-white');
+                        }
+
+                        const toast = new bootstrap.Toast(toastEl);
+                        toast.show();
+                    }
+
+                    // Xử lý chức năng tóm tắt bài viết
+                    const summaryContent = document.getElementById('summary-content');
+                    const summaryLoading = document.getElementById('summary-loading');
+                    // Biến lưu trữ tóm tắt hiện tại
+                    let currentSummary = '';
+                    let hasSummary = false;
+                    const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+                    const regenerateSummaryBtn = document.getElementById('regenerateSummaryBtn');
+                    
+                    // Biến lưu trữ audio URL hiện tại
+                    let currentAudioUrl = '';
+                    let hasAudio = false;
+                    const generateTTSBtn = document.getElementById('generateTTSBtn');
+                    const regenerateTTSBtn = document.getElementById('regenerateTTSBtn');
+                    const deleteTTSBtn = document.getElementById('deleteTTSBtn');
+                    const ttsContent = document.getElementById('tts-content');
+                    const ttsLoading = document.getElementById('tts-loading');
+
+                    // Hàm lấy nội dung từ tất cả các block paragraph
+                    function getAllParagraphContent() {
+                        const paragraphBlocks = document.querySelectorAll('.text-block');
+                        let content = '';
+                        paragraphBlocks.forEach(block => {
+                            content += block.innerText + '\n\n';
+                        });
+                        return content.trim();
+                    }
+
+                    // Hàm tạo tóm tắt
+                    async function generateSummary(maxLength = 200) {
+                        // Hiển thị trạng thái đang tải
+                        summaryLoading.classList.remove('d-none');
+                        summaryContent.innerHTML = '<p class="text-muted">Đang tạo tóm tắt...</p>';
+                        generateSummaryBtn.disabled = true;
+                        regenerateSummaryBtn.disabled = true;
+
+                        try {
+                            // Lấy nội dung từ tất cả các block paragraph
+                            const content = getAllParagraphContent();
+
+                            if (!content) {
+                                throw new Error('Không tìm thấy nội dung để tóm tắt');
+                            }
+
+                            // Gửi request đến FastAPI server
+                            const response = await fetch('http://localhost:8000/api/v1/summarize', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    content: content,
+                                    max_length: maxLength
+                                })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Lỗi khi tạo tóm tắt: ${response.statusText}`);
+                            }
+
+                            const data = await response.json();
+                            console.log('API response:', data);
+
+                            // Kiểm tra cấu trúc dữ liệu trả về
+                            if (data.success) {
+                                // Xử lý dữ liệu tóm tắt từ cấu trúc mới
+                                let summaryText = '';
+                                let originalLength = 0;
+                                let summaryLength = 0;
+                                let compressionRatio = 0;
+
+                                if (data.data && data.data.length > 0 && data.data[0].summary) {
+                                    summaryText = data.data[0].summary;
+                                    originalLength = data.data[0].original_length || 0;
+                                    summaryLength = data.data[0].summary_length || 0;
+                                    compressionRatio = data.data[0].compression_ratio || 0;
+                                    currentSummary = summaryText;
+                                    hasSummary = true;
+                                } else {
+                                    // Fallback nếu không tìm thấy dữ liệu tóm tắt trong cấu trúc mới
+                                    summaryText = 'Đã tạo tóm tắt thành công nhưng không thể hiển thị nội dung.';
+                                    currentSummary = summaryText;
+                                    hasSummary = true;
+                                }
+
+                                // Hiển thị tóm tắt và thông tin bổ sung
+                                let summaryHTML = `<p class="mb-3">${summaryText}</p>`;
+
+                                // Thêm thông tin về độ dài và tỷ lệ nén nếu có
+                                if (originalLength > 0 || summaryLength > 0 || compressionRatio > 0) {
+                                    summaryHTML += `<div class="summary-stats small text-muted">`;
+                                    if (originalLength > 0) {
+                                        summaryHTML += `<div>Độ dài ban đầu: ${originalLength} ký tự</div>`;
+                                    }
+                                    if (summaryLength > 0) {
+                                        summaryHTML += `<div>Độ dài tóm tắt: ${summaryLength} ký tự</div>`;
+                                    }
+                                    if (compressionRatio > 0) {
+                                        summaryHTML += `<div>Tỷ lệ nén: ${(compressionRatio * 100).toFixed(1)}%</div>`;
+                                    }
+                                    summaryHTML += `</div>`;
+                                }
+
+                                summaryContent.innerHTML = summaryHTML;
+
+                                // Hiển thị nút tạo lại tóm tắt
+                                generateSummaryBtn.classList.add('d-none');
+                                regenerateSummaryBtn.classList.remove('d-none');
+
+                                showToast('Đã tạo tóm tắt thành công!', 'success');
+                            } else {
+                                throw new Error(data.message || 'Không thể tạo tóm tắt');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            summaryContent.innerHTML = `<p class="text-danger">Lỗi: ${error.message}</p>`;
+                            showToast(`Lỗi khi tạo tóm tắt: ${error.message}`, 'error');
+                            hasSummary = false;
+                            currentSummary = '';
+                        } finally {
+                            // Ẩn trạng thái đang tải
+                            summaryLoading.classList.add('d-none');
+                            generateSummaryBtn.disabled = false;
+                            regenerateSummaryBtn.disabled = false;
+                        }
+                    }
+
+                    // Thêm sự kiện cho nút tạo tóm tắt
+                    if (generateSummaryBtn) {
+                        generateSummaryBtn.addEventListener('click', () => generateSummary(200));
+                    }
+
+                    // Thêm sự kiện cho nút tạo lại tóm tắt
+                    if (regenerateSummaryBtn) {
+                        regenerateSummaryBtn.addEventListener('click', () => generateSummary(200));
+                    }
+                    
+                    // Hàm tạo audio TTS
+                    async function generateTTS() {
+                        // Hiển thị trạng thái đang tải
+                        ttsLoading.classList.remove('d-none');
+                        ttsContent.innerHTML = '<p class="text-muted">Đang tạo audio...</p>';
+                        generateTTSBtn.disabled = true;
+                        regenerateTTSBtn.disabled = true;
+                        deleteTTSBtn.disabled = true;
+
+                        try {
+                            // Lấy nội dung từ tất cả các block paragraph
+                            const content = getAllParagraphContent();
+
+                            if (!content) {
+                                throw new Error('Không tìm thấy nội dung để tạo audio');
+                            }
+
+                            // Gửi request đến TTS API
+                            const response = await fetch('http://127.0.0.1:8000/api/v1/tts/upload', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    text: content,
+                                    voice_name: 'Zephyr'
+                                })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Lỗi khi tạo audio: ${response.statusText}`);
+                            }
+
+                            const data = await response.json();
+                            console.log('TTS API response:', data);
+
+                            // Kiểm tra cấu trúc dữ liệu trả về
+                            if (data.success) {
+                                // Xử lý dữ liệu audio từ cấu trúc
+                                let audioUrl = '';
+                                let audioSize = 0;
+                                let voiceName = '';
+                                let textLength = 0;
+
+                                if (data.data && data.data.length > 0) {
+                                    audioUrl = data.data[0].audio_url.trim();
+                                    audioSize = data.data[0].audio_size || 0;
+                                    voiceName = data.data[0].voice_name || '';
+                                    textLength = data.data[0].text_length || 0;
+                                    currentAudioUrl = audioUrl;
+                                    hasAudio = true;
+
+                                    // Lưu audio URL vào article
+                                    await saveAudioUrl(audioUrl);
+                                } else {
+                                    // Fallback nếu không tìm thấy dữ liệu audio trong cấu trúc
+                                    throw new Error('Đã tạo audio thành công nhưng không thể lấy đường dẫn.');
+                                }
+
+                                // Hiển thị audio player và thông tin bổ sung
+                                let audioHTML = `
+                                    <div class="audio-player-container">
+                                        <audio id="tts-audio-player" controls class="w-100 mb-2">
+                                            <source src="${audioUrl}" type="audio/wav">
+                                            Trình duyệt của bạn không hỗ trợ phát audio.
+                                        </audio>
+                                        <p class="text-muted small">URL: <span id="current-audio-url">${audioUrl}</span></p>
+                                    </div>
+                                `;
+
+                                // Thêm thông tin về kích thước và giọng đọc nếu có
+                                if (audioSize > 0 || voiceName || textLength > 0) {
+                                    audioHTML += `<div class="audio-stats small text-muted">`;
+                                    if (voiceName) {
+                                        audioHTML += `<div>Giọng đọc: ${voiceName}</div>`;
+                                    }
+                                    if (audioSize > 0) {
+                                        const audioSizeMB = (audioSize / (1024 * 1024)).toFixed(2);
+                                        audioHTML += `<div>Kích thước: ${audioSizeMB} MB</div>`;
+                                    }
+                                    if (textLength > 0) {
+                                        audioHTML += `<div>Độ dài văn bản: ${textLength} ký tự</div>`;
+                                    }
+                                    audioHTML += `</div>`;
+                                }
+
+                                ttsContent.innerHTML = audioHTML;
+
+                                // Hiển thị nút tạo lại và xóa audio
+                                generateTTSBtn.classList.add('d-none');
+                                regenerateTTSBtn.classList.remove('d-none');
+                                deleteTTSBtn.classList.remove('d-none');
+
+                                showToast('Đã tạo audio thành công!', 'success');
+                            } else {
+                                throw new Error(data.message || 'Không thể tạo audio');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            ttsContent.innerHTML = `<p class="text-danger">Lỗi: ${error.message}</p>`;
+                            showToast(`Lỗi khi tạo audio: ${error.message}`, 'error');
+                            hasAudio = false;
+                            currentAudioUrl = '';
+                        } finally {
+                            // Ẩn trạng thái đang tải
+                            ttsLoading.classList.add('d-none');
+                            generateTTSBtn.disabled = false;
+                            regenerateTTSBtn.disabled = false;
+                            deleteTTSBtn.disabled = false;
+                        }
+                    }
+
+                    // Hàm xóa audio TTS
+                    async function deleteTTS() {
+                        if (!currentAudioUrl && !hasAudio) {
+                            showToast('Không có audio để xóa', 'warning');
+                            return;
+                        }
+
+                        try {
+                            // Lấy URL audio hiện tại
+                            const audioUrlElement = document.getElementById('current-audio-url');
+                            const audioUrl = audioUrlElement ? audioUrlElement.textContent : currentAudioUrl;
+
+                            if (!audioUrl) {
+                                throw new Error('Không tìm thấy URL audio để xóa');
+                            }
+
+                            // Hiển thị trạng thái đang xóa
+                            ttsLoading.classList.remove('d-none');
+                            generateTTSBtn.disabled = true;
+                            regenerateTTSBtn.disabled = true;
+                            deleteTTSBtn.disabled = true;
+
+                            // Gửi request đến API xóa audio
+                            const response = await fetch('http://127.0.0.1:8000/api/v1/tts/delete-by-url', {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    audio_url: audioUrl
+                                })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Lỗi khi xóa audio: ${response.statusText}`);
+                            }
+
+                            const data = await response.json();
+                            console.log('Delete API response:', data);
+
+                            if (data.success) {
+                                // Xóa audio URL khỏi article
+                                await saveAudioUrl(null);
+
+                                // Cập nhật UI
+                                ttsContent.innerHTML = '<p class="text-muted">Chưa có audio. Nhấn nút \'Tạo audio\' để tạo audio tự động.</p>';
+                                generateTTSBtn.classList.remove('d-none');
+                                regenerateTTSBtn.classList.add('d-none');
+                                deleteTTSBtn.classList.add('d-none');
+
+                                // Cập nhật biến trạng thái
+                                hasAudio = false;
+                                currentAudioUrl = '';
+
+                                showToast('Đã xóa audio thành công!', 'success');
+                            } else {
+                                throw new Error(data.message || 'Không thể xóa audio');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            showToast(`Lỗi khi xóa audio: ${error.message}`, 'error');
+                        } finally {
+                            // Ẩn trạng thái đang tải
+                            ttsLoading.classList.add('d-none');
+                            generateTTSBtn.disabled = false;
+                            regenerateTTSBtn.disabled = false;
+                            deleteTTSBtn.disabled = false;
+                        }
+                    }
+
+                    // Hàm lưu audio URL vào article
+                    async function saveAudioUrl(audioUrl) {
+                        const articleSlug = document.location.pathname.split('/').slice(-1)[0].split('_')[0];
+                        const articleId = document.location.pathname.split('/').slice(-1)[0].split('_')[1];
+                        const url = '/admin/articles/' + articleSlug + '_' + articleId + '/save-audio-url';
+
+                        try {
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    audioUrl: audioUrl
+                                })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Lỗi khi lưu audio URL: ${response.statusText}`);
+                            }
+
+                            const data = await response.json();
+                            console.log('Save audio URL response:', data);
+
+                            if (!data.success) {
+                                throw new Error(data.message || 'Không thể lưu audio URL');
+                            }
+
+                            return true;
+                        } catch (error) {
+                            console.error('Error saving audio URL:', error);
+                            showToast(`Lỗi khi lưu audio URL: ${error.message}`, 'error');
+                            return false;
+                        }
+                    }
+
+                    // Thêm sự kiện cho nút tạo audio
+                    if (generateTTSBtn) {
+                        generateTTSBtn.addEventListener('click', generateTTS);
+                    }
+
+                    // Thêm sự kiện cho nút tạo lại audio
+                    if (regenerateTTSBtn) {
+                        regenerateTTSBtn.addEventListener('click', generateTTS);
+                    }
+
+                    // Thêm sự kiện cho nút xóa audio
+                    if (deleteTTSBtn) {
+                        deleteTTSBtn.addEventListener('click', deleteTTS);
+                    }
+
+                    // Kiểm tra audio và tóm tắt trước khi yêu cầu phê duyệt
+                    const submitArticleModal = document.getElementById('submitArticleModal');
+                    const confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
+                    const summaryWarning = document.getElementById('summary-warning');
+                    const audioWarning = document.getElementById('audio-warning');
+                    
+                    if (submitArticleModal) {
+                        submitArticleModal.addEventListener('show.bs.modal', function() {
+                            let canSubmit = true;
+                            
+                            // Kiểm tra xem đã có tóm tắt chưa
+                            if (!hasSummary) {
+                                summaryWarning.classList.remove('d-none');
+                                canSubmit = false;
+                            } else {
+                                summaryWarning.classList.add('d-none');
+                            }
+                            
+                            // Kiểm tra xem đã có audio chưa
+                            if (!hasAudio && !document.getElementById('tts-audio-player')) {
+                                audioWarning.classList.remove('d-none');
+                                canSubmit = false;
+                            } else {
+                                audioWarning.classList.add('d-none');
+                            }
+                            
+                            // Cập nhật trạng thái nút xác nhận
+                            confirmSubmitBtn.disabled = !canSubmit;
+                        });
+                    }
+                });
+            </script>
+        </th:block>
+    </div>
+</body>
+
+</html>

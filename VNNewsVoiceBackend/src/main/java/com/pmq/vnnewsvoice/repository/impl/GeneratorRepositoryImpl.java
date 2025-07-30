@@ -36,9 +36,9 @@ public class GeneratorRepositoryImpl implements GeneratorRepository {
 
     @Override
     public Optional<Generator> getGeneratorByName(String name) {
-        String hql = "FROM Generator g WHERE g.name like :name";
+        String hql = "FROM Generator g WHERE g.name like :name or g.url like :name";
         return entityManager.createQuery(hql, Generator.class)
-                .setParameter("name", name)
+                .setParameter("name", "%" + name + "%")
                 .getResultStream()
                 .findFirst();
     }

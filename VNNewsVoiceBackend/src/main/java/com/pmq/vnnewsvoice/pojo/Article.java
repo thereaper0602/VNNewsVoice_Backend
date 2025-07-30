@@ -4,21 +4,9 @@
  */
 package com.pmq.vnnewsvoice.pojo;
 
-import jakarta.persistence.Basic;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
+import com.pmq.vnnewsvoice.enums.ArticleStatus;
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Set;
@@ -78,6 +66,25 @@ public class Article implements Serializable {
     @JoinColumn(name = "category_id", referencedColumnName = "id")
     @ManyToOne
     private Category categoryId;
+
+    @Column(name = "is_being_edited")
+    private Boolean isBeingEdited;
+    
+    @Column(name = "edit_started_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date editStartedAt;
+    
+    @Column(name = "deleted_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date deletedAt;
+
+    @Column(name = "top_image_url")
+    private String topImageUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private ArticleStatus status;
+
     @JoinColumn(name = "editor_id", referencedColumnName = "id")
     @ManyToOne
     private Editor editorId;
@@ -102,6 +109,46 @@ public class Article implements Serializable {
         this.id = id;
         this.title = title;
         this.slug = slug;
+    }
+
+    public Boolean getIsBeingEdited() {
+        return isBeingEdited;
+    }
+
+    public void setIsBeingEdited(Boolean isBeingEdited) {
+        this.isBeingEdited = isBeingEdited;
+    }
+
+    public Date getEditStartedAt() {
+        return editStartedAt;
+    }
+
+    public void setEditStartedAt(Date editStartedAt) {
+        this.editStartedAt = editStartedAt;
+    }
+
+    public Date getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(Date deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public String getTopImageUrl() {
+        return topImageUrl;
+    }
+
+    public void setTopImageUrl(String topImageUrl) {
+        this.topImageUrl = topImageUrl;
+    }
+
+    public ArticleStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ArticleStatus status) {
+        this.status = status;
     }
 
     public Long getId() {

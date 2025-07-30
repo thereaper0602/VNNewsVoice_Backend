@@ -1,5 +1,6 @@
 package com.pmq.vnnewsvoice.service.impl;
 
+import com.pmq.vnnewsvoice.enums.ArticleStatus;
 import com.pmq.vnnewsvoice.pojo.Article;
 import com.pmq.vnnewsvoice.pojo.ArticleBlock;
 import com.pmq.vnnewsvoice.pojo.Category;
@@ -45,7 +46,7 @@ public class ArticleCrawlerServiceImpl implements ArticleCrawlerService {
     private String apiUrl;
 
     // Store blocks data temporarily for each article
-    private Map<Article, List<Map<String, Object>>> articleBlocksData = new HashMap<>();
+    private Map<String, List<Map<String, Object>>> articleBlocksData = new HashMap<>();
 
     @Override
     public List<Article> fetchArticlesFromAPI() {
@@ -59,10 +60,10 @@ public class ArticleCrawlerServiceImpl implements ArticleCrawlerService {
 
             Map<String, Object> responseBody = response.getBody();
             List<Article> articles = new ArrayList<>();
-            articleBlocksData.clear(); // Clear previous data
+            articleBlocksData.clear();
 
             if (responseBody != null && (Boolean) responseBody.get("success")) {
-                @SuppressWarnings("unchecked")
+                @SuppressWarnings("unchecked") // Báo trình biên dịch bỏ qua các lỗi ép kiểu
                 List<Map<String, Object>> articlesData = (List<Map<String, Object>>) responseBody.get("data");
 
                 if (articlesData != null) {
@@ -75,7 +76,7 @@ public class ArticleCrawlerServiceImpl implements ArticleCrawlerService {
                         articles.add(article);
 
                         // Store blocks data for later use
-                        articleBlocksData.put(article, blocks);
+                        articleBlocksData.put(article.getTitle(), blocks);
                     }
                 }
             }
@@ -99,7 +100,7 @@ public class ArticleCrawlerServiceImpl implements ArticleCrawlerService {
 
                 if (existingArticles.isEmpty()) {
                     // Get blocks data from our temporary storage
-                    List<Map<String, Object>> blocks = articleBlocksData.get(article);
+                    List<Map<String, Object>> blocks = articleBlocksData.get(article.getTitle());
 
                     // Save article first without blocks
                     Article savedArticle = articleService.addArticle(article);
@@ -161,7 +162,7 @@ public class ArticleCrawlerServiceImpl implements ArticleCrawlerService {
 
         // Set default values
         article.setIsActive(true);
-        article.setAuthor("API Crawler"); // Default author
+        article.setAuthor("API Crawler");
 
         // Set category - assuming we have a default category with ID 1
         Category category = new Category(1L);
@@ -170,6 +171,14 @@ public class ArticleCrawlerServiceImpl implements ArticleCrawlerService {
         // Extract generator from URL
         Generator generator = extractGeneratorFromUrl(url);
         article.setGeneratorId(generator);
+
+        if (articleData.containsKey("top_image")) {
+            article.setTopImageUrl((String) articleData.get("top_image"));
+        }
+
+        article.setIsBeingEdited(false);
+        article.setIsActive(true);
+        article.setStatus(ArticleStatus.DRAFT);
 
         return article;
     }
@@ -233,8 +242,20 @@ public class ArticleCrawlerServiceImpl implements ArticleCrawlerService {
             articleBlock.setAlt((String) blockData.get("alt"));
             articleBlock.setCaption((String) blockData.get("caption"));
 
-            // Set text field same as content for text blocks
-            if ("text".equals(articleBlock.getType())) {
+            // Xử lý đúng cách cho các loại block khác nhau
+            String type = articleBlock.getType();
+
+            // Xử lý cho block loại heading
+            if ("heading".equals(type)) {
+                articleBlock.setText((String) blockData.get("text"));
+                articleBlock.setTag((String) blockData.get("tag"));
+            }
+            // Xử lý cho block loại paragraph
+            else if ("paragraph".equals(type)) {
+                // Nếu cần thiết, có thể xử lý đặc biệt cho paragraph
+            }
+            // Xử lý cho block loại text (nếu có)
+            else if ("text".equals(type)) {
                 articleBlock.setText(articleBlock.getContent());
             }
 

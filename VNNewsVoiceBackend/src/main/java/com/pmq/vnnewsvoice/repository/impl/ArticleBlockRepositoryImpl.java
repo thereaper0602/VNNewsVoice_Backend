@@ -52,6 +52,19 @@ public class ArticleBlockRepositoryImpl implements ArticleBlockRepository {
     public Optional<ArticleBlock> updateArticleBlock(ArticleBlock articleBlock) {
         ArticleBlock existingBlock = entityManager.find(ArticleBlock.class, articleBlock.getId());
         if (existingBlock != null) {
+            // Cập nhật các thuộc tính của existingBlock từ articleBlock
+            if ("paragraph".equals(articleBlock.getType())) {
+                existingBlock.setContent(articleBlock.getContent());
+            } else if ("image".equals(articleBlock.getType())) {
+                existingBlock.setSrc(articleBlock.getSrc());
+                existingBlock.setAlt(articleBlock.getAlt());
+                existingBlock.setCaption(articleBlock.getCaption());
+            } else if ("heading".equals(articleBlock.getType())) {
+                existingBlock.setText(articleBlock.getText());
+                existingBlock.setTag(articleBlock.getTag());
+            }
+            
+            // Merge đối tượng đã được cập nhật
             entityManager.merge(existingBlock);
             return Optional.of(existingBlock);
         }
@@ -96,7 +109,7 @@ public class ArticleBlockRepositoryImpl implements ArticleBlockRepository {
 
     @Override
     public List<ArticleBlock> getArticleBlocksByArticleId(Long articleId) {
-        String hql = "FROM ArticleBlock ab WHERE ab.articleId = :articleId";
+        String hql = "FROM ArticleBlock ab WHERE ab.articleId.id = :articleId order by ab.orderIndex ASC";
         return entityManager.createQuery(hql, ArticleBlock.class)
                 .setParameter("articleId", articleId)
                 .getResultList();
