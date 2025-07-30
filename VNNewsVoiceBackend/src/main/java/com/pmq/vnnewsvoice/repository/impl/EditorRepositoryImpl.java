@@ -37,9 +37,6 @@ public class EditorRepositoryImpl implements EditorRepository {
 
     @Override
     public Optional<Editor> getEditorByUserId(Long userId) {
-        if (userId == null) {
-            return Optional.empty();
-        }
         String hql = "FROM Editor e WHERE e.userId.id = :userId";
         List<Editor> editors = entityManager.createQuery(hql, Editor.class)
                 .setParameter("userId", userId)

@@ -3,7 +3,6 @@ package com.pmq.vnnewsvoice.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -12,7 +11,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 import java.util.List;
 
@@ -37,14 +35,23 @@ public class SpringSecurityConfigs {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(
-                auth -> auth.requestMatchers("/", "/admin/articles").authenticated()
+                auth -> auth
+                .requestMatchers("/assets/**").permitAll()
+                .requestMatchers("/login").permitAll()
+
+
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                
+                .requestMatchers("/editor/**").hasRole("EDITOR")
+
+                .requestMatchers("/").authenticated()
             )
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form
                         -> form.loginPage("/login")
                         .loginProcessingUrl("/login")
                         .defaultSuccessUrl("/")
-                        .failureUrl("/login").permitAll())
+                        .failureUrl("/login?error=true").permitAll())
 
                 .logout(logout -> logout.logoutSuccessUrl("/login").permitAll())
 

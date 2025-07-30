@@ -22,6 +22,7 @@ public interface ArticleRepository {
 
     long countArticles();
     long countSearchArticles(Map<String, String> filters);
+    boolean isEditorOfArticle(Long editorId, Long articleId);
 
     List<Predicate> buildSearchPredicates(Map<String, String> filters, CriteriaBuilder builder, Root<Article> root);
 }

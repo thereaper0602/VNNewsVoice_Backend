@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public interface UserInfoService extends UserDetailsService {
+public interface UserInfoService{
     UserInfo addUser(UserInfo Userinfo);
 
     Optional<UserInfo> getUserById(Long id);
@@ -21,5 +21,4 @@ public interface UserInfoService extends UserDetailsService {
     long countUsers(Map<String, String> params);
     long countSearchUsers(Map<String, String> filters, Map<String, String> params);
 
-    boolean authenticateUser(String username, String password);
 }

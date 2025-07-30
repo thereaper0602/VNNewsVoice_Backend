@@ -290,7 +290,6 @@
 
 
                 <!-- Thông báo trạng thái chỉnh sửa -->
-                <!-- Thông báo trạng thái chỉnh sửa -->
                 <div class="edit-status mt-3">
                     <!-- Thông báo khi đang chỉnh sửa -->
                     <div class="alert alert-info" th:if="${article.isBeingEdited}">
@@ -332,7 +331,7 @@
                     <div th:each="block, blockStat : ${articleBlocks}" class="article-block"
                         th:classappend="${block.type}" th:id="'block-' + ${block.id}">
                         <!-- Nút chỉnh sửa block -->
-                        <button type="button" class="edit-block-btn" th:data-block-id="${block.id}"
+                        <button sec:authorize="hasRole('EDITOR')" type="button" class="edit-block-btn" th:data-block-id="${block.id}"
                             th:data-block-type="${block.type}" data-bs-toggle="modal"
                             th:data-bs-target="'#editBlockModal-' + ${block.id}">
                             <i class="ri-edit-line"></i> Sửa
@@ -411,7 +410,7 @@
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy
                                         </button>
-                                        <button type="button" class="btn btn-primary save-block-btn"
+                                        <button sec:authorize="hasRole('EDITOR')" type="button" class="btn btn-primary save-block-btn"
                                             th:data-block-id="${block.id}" th:data-block-type="${block.type}"
                                             data-bs-dismiss="modal">Lưu thay đổi
                                         </button>
@@ -424,26 +423,24 @@
             </div>
 
             <!-- Các nút hành động -->
-            <!-- Các nút hành động -->
             <div class="action-buttons">
-                <a th:href="@{'/admin/articles'}" class="btn btn-secondary">Quay lại</a>
+                <a th:href="@{'/editor/articles'}" class="btn btn-secondary">Quay lại</a>
 
                 <!-- Nút bắt đầu chỉnh sửa: hiển thị khi chưa trong trạng thái chỉnh sửa và không phải đang chờ phê duyệt hoặc đã xuất bản -->
                 <form
                     th:if="${!article.isBeingEdited && (article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT || article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED)}"
-                    th:action="@{'/admin/articles/' + ${article.slug} + '_' + ${article.id} + '/start-editing'}"
+                    th:action="@{'/editor/articles/' + ${article.slug} + '_' + ${article.id} + '/start-editing'}"
                     method="post" style="display: inline;">
-                    <button type="submit" class="btn btn-primary">Bắt đầu chỉnh sửa</button>
+                    <button sec:authorize="hasRole('EDITOR')" type="submit" class="btn btn-primary">Bắt đầu chỉnh sửa</button>
                 </form>
 
                 <!-- Nút lưu thay đổi: chỉ hiển thị khi đang trong trạng thái chỉnh sửa -->
-                <button th:if="${article.isBeingEdited}" type="button" class="btn btn-success" data-bs-toggle="modal"
+                <button sec:authorize="hasRole('EDITOR')" th:if="${article.isBeingEdited}" type="button" class="btn btn-success" data-bs-toggle="modal"
                     data-bs-target="#saveChangesModal">Lưu tất cả thay đổi
                 </button>
 
                 <!-- Nút yêu cầu duyệt bài: chỉ hiển thị khi đang chỉnh sửa và ở trạng thái nháp hoặc bị từ chối -->
-                <!-- Nút yêu cầu duyệt bài: chỉ hiển thị khi đang chỉnh sửa và ở trạng thái nháp hoặc bị từ chối -->
-                <button
+                <button sec:authorize="hasRole('EDITOR')"
                     th:if="${article.isBeingEdited && (article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT || article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED)}"
                     type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#submitArticleModal">
                     Yêu cầu duyệt bài
@@ -483,9 +480,9 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                         <form id="submitArticleForm"
-                            th:action="@{'/admin/articles/' + ${article.slug} + '_' + ${article.id} + '/submit'}"
+                            th:action="@{'/editor/articles/' + ${article.slug} + '_' + ${article.id} + '/submit'}"
                             method="post">
-                            <button id="confirmSubmitBtn" type="submit" class="btn btn-danger">Xác nhận nộp bài</button>
+                            <button sec:authorize="hasRole('EDITOR')" id="confirmSubmitBtn" type="submit" class="btn btn-danger">Xác nhận nộp bài</button>
                         </form>
                     </div>
                 </div>
@@ -507,7 +504,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="button" class="btn btn-success" id="confirmSaveChanges"
+                        <button sec:authorize="hasRole('EDITOR')" type="button" class="btn btn-success" id="confirmSaveChanges"
                             data-bs-dismiss="modal">Xác nhận lưu
                         </button>
                     </div>
@@ -529,8 +526,8 @@
                 <p class="mt-2">Đang tạo tóm tắt...</p>
             </div>
             <div class="summary-actions">
-                <button id="generateSummaryBtn" class="btn btn-primary me-2">Tạo tóm tắt</button>
-                <button id="regenerateSummaryBtn" class="btn btn-outline-primary d-none">Tạo lại tóm tắt</button>
+                <button sec:authorize="hasRole('EDITOR')" id="generateSummaryBtn" class="btn btn-primary me-2">Tạo tóm tắt</button>
+                <button sec:authorize="hasRole('EDITOR')" id="regenerateSummaryBtn" class="btn btn-outline-primary d-none">Tạo lại tóm tắt</button>
             </div>
         </div>
 
@@ -554,9 +551,9 @@
                 <p class="mt-2">Đang tạo audio...</p>
             </div>
             <div class="tts-actions">
-                <button id="generateTTSBtn" class="btn btn-primary me-2">Tạo audio</button>
-                <button id="regenerateTTSBtn" class="btn btn-outline-primary me-2" th:classappend="${article.audioUrl} ? '' : 'd-none'">Tạo lại audio</button>
-                <button id="deleteTTSBtn" class="btn btn-outline-danger" th:classappend="${article.audioUrl} ? '' : 'd-none'">Xóa audio</button>
+                <button sec:authorize="hasRole('EDITOR')" id="generateTTSBtn" class="btn btn-primary me-2">Tạo audio</button>
+                <button sec:authorize="hasRole('EDITOR')" id="regenerateTTSBtn" class="btn btn-outline-primary me-2" th:classappend="${article.audioUrl} ? '' : 'd-none'">Tạo lại audio</button>
+                <button sec:authorize="hasRole('EDITOR')" id="deleteTTSBtn" class="btn btn-outline-danger" th:classappend="${article.audioUrl} ? '' : 'd-none'">Xóa audio</button>
             </div>
         </div>
 
@@ -679,21 +676,41 @@
 
                     // Hàm lưu tất cả thay đổi
                     function saveAllChanges() {
-                        if (editedBlocks.length === 0) {
+                        if (editedBlocks.length === 0 && !hasSummary && !hasAudio) {
                             showToast('Không có thay đổi nào để lưu!');
                             return;
                         }
 
+                        // Thêm tóm tắt vào dữ liệu gửi đi nếu có
                         if (hasSummary) {
-                            editedBlocks.push({
-                                type: 'summary',
-                                content: currentSummary
-                            });
+                            // Kiểm tra xem summary đã có trong editedBlocks chưa
+                            const summaryIndex = editedBlocks.findIndex(block => block.type === 'summary');
+                            if (summaryIndex !== -1) {
+                                // Cập nhật summary nếu đã có
+                                editedBlocks[summaryIndex].content = currentSummary;
+                            } else {
+                                // Thêm summary nếu chưa có
+                                editedBlocks.push({
+                                    type: 'summary',
+                                    content: currentSummary
+                                });
+                            }
                         }
 
                         const articleSlug = document.location.pathname.split('/').slice(-1)[0].split('_')[0];
                         const articleId = document.location.pathname.split('/').slice(-1)[0].split('_')[1];
-                        const url = '/admin/articles/' + articleSlug + '_' + articleId + '/save-all-changes';
+                        const url = '/editor/articles/' + articleSlug + '_' + articleId + '/save-all-changes';
+
+                        // Chuẩn bị dữ liệu gửi đi
+                        const requestData = {
+                            blocks: editedBlocks,
+                            summary: hasSummary ? currentSummary : null
+                        };
+
+                        // Thêm audio URL vào dữ liệu gửi đi nếu có
+                        if (hasAudio && currentAudioUrl) {
+                            requestData.audioUrl = currentAudioUrl;
+                        }
 
                         // Gửi request lưu tất cả thay đổi
                         fetch(url, {
@@ -701,10 +718,7 @@
                             headers: {
                                 'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify({
-                                blocks: editedBlocks,
-                                summary: hasSummary ? currentSummary : null
-                            })
+                            body: JSON.stringify(requestData)
                         })
                             .then(response => response.json())
                             .then(data => {
@@ -715,12 +729,12 @@
                                         window.location.reload();
                                     }, 1000);
                                 } else {
-                                    showToast('Lỗi: ' + (data.message || 'Không thể lưu thay đổi'));
+                                    showToast('Lỗi: ' + (data.message || 'Không thể lưu thay đổi'), 'error');
                                 }
                             })
                             .catch(error => {
                                 console.error('Error:', error);
-                                showToast('Lỗi kết nối: ' + error.message);
+                                showToast('Lỗi kết nối: ' + error.message, 'error');
                             });
                     }
 
@@ -1069,7 +1083,7 @@
                     async function saveAudioUrl(audioUrl) {
                         const articleSlug = document.location.pathname.split('/').slice(-1)[0].split('_')[0];
                         const articleId = document.location.pathname.split('/').slice(-1)[0].split('_')[1];
-                        const url = '/admin/articles/' + articleSlug + '_' + articleId + '/save-audio-url';
+                        const url = '/editor/articles/' + articleSlug + '_' + articleId + '/save-audio-url';
 
                         try {
                             const response = await fetch(url, {

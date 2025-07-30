@@ -2,6 +2,7 @@ package com.pmq.vnnewsvoice.repository.impl;
 
 import com.pmq.vnnewsvoice.pojo.Article;
 import com.pmq.vnnewsvoice.repository.ArticleRepository;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.criteria.*;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -158,6 +159,24 @@ public class ArticleRepositoryImpl implements ArticleRepository {
     }
 
     @Override
+    public boolean isEditorOfArticle(Long editorId, Long articleId) {
+        try{
+            CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+            CriteriaQuery<Article> query = builder.createQuery(Article.class);
+            Root<Article> root = query.from(Article.class);
+            query.where(builder.and(
+                    builder.equal(root.get("editorId").get("id"),editorId),
+                    builder.equal(root.get("id"), articleId)
+            ));
+            Article article = entityManager.createQuery(query).getSingleResult();
+            return article != null;
+        }
+        catch (NoResultException e){
+            return false;
+        }
+    }
+
+    @Override
     public List<Predicate> buildSearchPredicates(Map<String, String> filters,CriteriaBuilder builder, Root<Article> root) {
         List<Predicate> predicates = new ArrayList<>();
 
@@ -174,6 +193,14 @@ public class ArticleRepositoryImpl implements ArticleRepository {
                 if (categoryIdStr != null && !categoryIdStr.isEmpty()) {
                     Long categoryId = Long.parseLong(categoryIdStr);
                     predicates.add(builder.equal(root.get("categoryId").get("id"), categoryId));
+                }
+            }
+
+            if(filters.containsKey("editorId")){
+                String editorIdStr = filters.get("editorId");
+                if (editorIdStr != null && !editorIdStr.isEmpty()){
+                    Long editorId = Long.parseLong(editorIdStr);
+                    predicates.add(builder.equal(root.get("editorId").get("id"), editorId));
                 }
             }
 

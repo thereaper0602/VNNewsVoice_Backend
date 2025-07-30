@@ -1,6 +1,7 @@
 package com.pmq.vnnewsvoice.service;
 
 import com.pmq.vnnewsvoice.pojo.Article;
+import com.pmq.vnnewsvoice.pojo.UserInfo;
 
 import java.util.List;
 import java.util.Map;
@@ -11,9 +12,11 @@ public interface ArticleService {
 
     Optional<Article> getArticleById(Long id);
     Optional<Article> getArticleBySlugAndId(String slug, Long id);
+    Optional<Article> getArticleBySlugAndIdWithPermissionCheck(String slug, Long id, UserInfo userInfo);
     List<Article> getArticlesByCategoryId(Long categoryId);
     List<Article> searchArticles(Map<String, String> filters, Map<String, String> params);
     List<Article> getArticles(Map<String, String> params);
+
 
     Article updateArticle(Article article);
 

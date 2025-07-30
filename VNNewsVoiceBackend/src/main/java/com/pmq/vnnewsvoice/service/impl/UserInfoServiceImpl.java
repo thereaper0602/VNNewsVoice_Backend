@@ -3,8 +3,6 @@ package com.pmq.vnnewsvoice.service.impl;
 import com.pmq.vnnewsvoice.pojo.UserInfo;
 import com.pmq.vnnewsvoice.repository.UserInfoRepository;
 import com.pmq.vnnewsvoice.service.UserInfoService;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
@@ -18,7 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.*;
 
-@Service("userDetaiService")
+@Service
 @Transactional
 public class UserInfoServiceImpl implements UserInfoService {
 
@@ -98,27 +96,5 @@ public class UserInfoServiceImpl implements UserInfoService {
     @Override
     public long countSearchUsers(Map<String, String> filters, Map<String, String> params) {
         return userInfoRepository.countSearchUsers(filters,params);
-    }
-
-
-    @Override
-    public boolean authenticateUser(String username, String password) {
-        if(username == null || password == null){
-            return false;
-        }
-        return userInfoRepository.authenticateUser(username, password);
-    }
-
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<UserInfo> u = getUserByUsername(username);
-        if(u.isEmpty()){
-            throw new UsernameNotFoundException("Invalid username!");
-        }
-
-        Set<GrantedAuthority> authorities = new HashSet<>();
-        authorities.add(new SimpleGrantedAuthority(u.get().getRoleId().getName()));
-
-        return new User(u.get().getUsername(), u.get().getPassword(), authorities);
     }
 }
