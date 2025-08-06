@@ -9,6 +9,7 @@ public interface AdminRepository {
     Admin addAdmin(Admin admin);
 
     Optional<Admin> getAdminById(Long id);
+    Optional<Admin> getAdminByUserId(Long userId);
 
     Admin updateAdmin(Admin admin);
 

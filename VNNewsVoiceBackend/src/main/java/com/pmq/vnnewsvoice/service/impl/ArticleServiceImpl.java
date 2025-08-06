@@ -1,11 +1,18 @@
 package com.pmq.vnnewsvoice.service.impl;
 
 import com.pmq.vnnewsvoice.pojo.Article;
+import com.pmq.vnnewsvoice.pojo.Editor;
+import com.pmq.vnnewsvoice.pojo.UserInfo;
 import com.pmq.vnnewsvoice.repository.ArticleRepository;
+import com.pmq.vnnewsvoice.repository.UserInfoRepository;
 import com.pmq.vnnewsvoice.service.ArticleService;
+import com.pmq.vnnewsvoice.service.EditorService;
+import com.pmq.vnnewsvoice.service.UserInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
+import org.springframework.security.access.AccessDeniedException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,6 +22,12 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Autowired
     private ArticleRepository articleRepository;
+
+    @Autowired
+    private UserInfoService userInfoService;
+
+    @Autowired
+    private EditorService editorService;
 
     @Override
     public Article addArticle(Article article) {
@@ -38,6 +51,30 @@ public class ArticleServiceImpl implements ArticleService {
             return Optional.empty();
         }
         return articleRepository.getArticleBySlugAndId(slug, id);
+    }
+
+    @Override
+    public Optional<Article> getArticleBySlugAndIdWithPermissionCheck(String slug, Long id, UserInfo userInfo) {
+        Optional<Article> article = getArticleBySlugAndId(slug, id);
+
+        if(article.isEmpty()){
+            throw new IllegalArgumentException("Không có bài báo hợp lệ");
+        }
+
+        if(userInfo.getRoleId().getName().contains("EDITOR")){
+            Optional<Editor> editor = editorService.getEditorByUserId(userInfo.getId());
+
+            if(editor.isEmpty()){
+                throw new AccessDeniedException("Không tồn tại người dùng này");
+            }
+
+            boolean isEditorOfArticle = articleRepository.isEditorOfArticle(editor.get().getId(),article.get().getId());
+
+            if(!isEditorOfArticle){
+                throw new AccessDeniedException("Không có quyền truy cập vào tài nguyên này");
+            }
+        }
+        return article;
     }
 
     @Override

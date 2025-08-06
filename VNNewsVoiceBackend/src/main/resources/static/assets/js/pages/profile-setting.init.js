@@ -41,6 +41,14 @@ if (document.querySelector("#profile-img-file-input")) {
         );
         if (file) {
             reader.readAsDataURL(file);
+            
+            // Thêm dòng này để sao chép file vào input avatarFile
+            var avatarFileInput = document.querySelector("#imagePicker");
+            
+            // Tạo một DataTransfer object để gán file vào input khác
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            avatarFileInput.files = dataTransfer.files;
         }
     });
 }

@@ -249,10 +249,10 @@
                     <label for="statusSelect" class="form-label">Chuyển đổi trạng thái:</label>
                     <select id="statusSelect" name="status" class="form-select">
                         <option value="">Chọn trạng thái mới</option>
-                        <option value="DRAFT" th:selected="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT}">Draft</option>
-                        <option value="PENDING" th:selected="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).PENDING}">Pending</option>
-                        <option value="PUBLISHED" th:selected="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).PUBLISHED}">Published</option>
-                        <option value="REJECTED" th:selected="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED}">Rejected</option>
+                        <option value="DRAFT" th:selected="${article.status != null && article.status.name() == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT.name()}">Draft</option>
+                        <option value="PENDING" th:selected="${article.status != null && article.status.name() == T(com.pmq.vnnewsvoice.enums.ArticleStatus).PENDING.name()}">Pending</option>
+                        <option value="PUBLISHED" th:selected="${article.status != null && article.status.name() == T(com.pmq.vnnewsvoice.enums.ArticleStatus).PUBLISHED.name()}">Published</option>
+                        <option value="REJECTED" th:selected="${article.status != null && article.status.name() == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED.name()}">Rejected</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary">Cập nhật trạng thái</button>
@@ -333,7 +333,7 @@
         <!-- Các nút hành động -->
         <div class="action-buttons">
             <a th:href="@{'/admin/articles'}" class="btn btn-secondary">Quay lại</a>
-            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">Xóa bài viết</button>
+            <button sec:authorize="hasRole('ADMIN')" type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">Xóa bài viết</button>
         </div>
 
     </div>
