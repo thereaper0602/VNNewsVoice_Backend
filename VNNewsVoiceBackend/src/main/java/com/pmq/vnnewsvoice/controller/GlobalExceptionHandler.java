@@ -1,5 +1,6 @@
 package com.pmq.vnnewsvoice.controller;
 
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,31 @@ import java.util.Map;
 @ControllerAdvice
 public class GlobalExceptionHandler {
     
+
+    @ExceptionHandler(org.springframework.security.authorization.AuthorizationDeniedException.class)
+    public String handleAuthorizationDeniedException(org.springframework.security.authorization.AuthorizationDeniedException ex, 
+                                            HttpServletRequest request,
+                                            RedirectAttributes redirectAttributes) {
+        // Lấy URI hiện tại để xác định vai trò của người dùng
+        String requestURI = request.getRequestURI();
+        String redirectPath;
+        
+        // Xác định trang chuyển hướng dựa trên URI
+        if (requestURI.startsWith("/admin")) {
+            redirectPath = "/admin/articles";
+        } else if (requestURI.startsWith("/editor")) {
+            redirectPath = "/editor/articles";
+        } else {
+            // Mặc định chuyển hướng về trang chính
+            redirectPath = "/";
+        }
+        
+        // Thêm thông báo lỗi
+        redirectAttributes.addFlashAttribute("error", "Bạn không có quyền truy cập: " + ex.getMessage());
+        
+        return "redirect:" + redirectPath;
+    }
+
     /**
      * Xử lý AccessDeniedException và chuyển hướng người dùng dựa trên URL hiện tại
      */
@@ -65,6 +91,34 @@ public class GlobalExceptionHandler {
         redirectAttributes.addFlashAttribute("error", "Dữ liệu không hợp lệ: " + ex.getMessage());
         
         return "redirect:" + redirectPath;
+    }
+    
+    /**
+     * Xử lý ServletException, bao gồm lỗi "response already committed"
+     */
+    @ExceptionHandler(ServletException.class)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> handleServletException(ServletException ex, HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        Map<String, Object> errorResponse = new HashMap<>();
+        
+        // Kiểm tra nếu là lỗi "response already committed"
+        if (ex.getMessage() != null && ex.getMessage().contains("response is already committed")) {
+            // Log lỗi nhưng không thể thay đổi response vì đã commit
+            System.err.println("Không thể xử lý ngoại lệ vì response đã được commit: " + ex.getMessage());
+            
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Đã xảy ra lỗi khi xử lý yêu cầu");
+            
+            // Trả về INTERNAL_SERVER_ERROR nhưng lưu ý rằng response có thể đã được gửi một phần
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        
+        // Xử lý các ServletException khác
+        errorResponse.put("success", false);
+        errorResponse.put("message", "Lỗi servlet: " + ex.getMessage());
+        
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     
     /**

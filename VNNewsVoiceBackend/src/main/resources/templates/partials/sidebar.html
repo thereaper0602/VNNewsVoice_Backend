@@ -61,32 +61,25 @@
 										<i data-feather="hexagon" class="icon-dual"></i> <span data-key="t-layouts">All Users</span>
 									</a>
 								</li>
-								<li class="nav-item">
-									<a th:href="@{/admin/lecturers}" data-key="p-users" class="nav-link menu-link" role="button" aria-expanded="false" aria-controls="sidebarLayouts">
-										<i data-feather="monitor" class="icon-dual"></i> <span data-key="t-layouts">Lecturers</span>
-									</a>
-								</li>
-								<li class="nav-item">
-									<a th:href="@{/admin/students}" data-key="p-users" class="nav-link menu-link" role="button" aria-expanded="false" aria-controls="sidebarLayouts">
-										<i data-feather="pen-tool" class="icon-dual"></i> <span data-key="t-layouts">Students</span>
-									</a>
-								</li>
+<!--								<li class="nav-item">-->
+<!--									<a th:href="@{/admin/lecturers}" data-key="p-users" class="nav-link menu-link" role="button" aria-expanded="false" aria-controls="sidebarLayouts">-->
+<!--										<i data-feather="monitor" class="icon-dual"></i> <span data-key="t-layouts">Lecturers</span>-->
+<!--									</a>-->
+<!--								</li>-->
+<!--								<li class="nav-item">-->
+<!--									<a th:href="@{/admin/students}" data-key="p-users" class="nav-link menu-link" role="button" aria-expanded="false" aria-controls="sidebarLayouts">-->
+<!--										<i data-feather="pen-tool" class="icon-dual"></i> <span data-key="t-layouts">Students</span>-->
+<!--									</a>-->
+<!--								</li>-->
 							</ul>
 						</div>
 					</li> <!-- end Dashboard Menu -->
 					<li class="nav-item">
-						<a th:href="@{/admin/courses}" data-key="p-course" class="nav-link menu-link" role="button" aria-expanded="false" aria-controls="sidebarLayouts">
-							<i data-feather="book-open" class="icon-dual"></i> <span data-key="t-layouts">Courses</span>
+						<a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/articles}" data-key="p-course" class="nav-link menu-link" role="button" aria-expanded="false" aria-controls="sidebarLayouts">
+							<i data-feather="book-open" class="icon-dual"></i> <span data-key="t-layouts">Articles</span>
 						</a>
-					</li>
-					<li class="nav-item">
-						<a th:href="@{/admin/student-certificates}" data-key="p-student-certs" class="nav-link menu-link" role="button" aria-expanded="false" aria-controls="sidebarLayouts">
-							<i data-feather="layout" class="icon-dual"></i> <span data-key="t-layouts">Student Certificates</span>
-						</a>
-					</li>
-					<li class="nav-item">
-						<a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/statistics}" data-key="p-student-certs" class="nav-link menu-link" role="button" aria-expanded="false" aria-controls="sidebarLayouts">
-							<i data-feather="bar-chart-2" class="icon-dual"></i> <span data-key="t-layouts">Statistics</span>
+						<a sec:authorize="hasRole('EDITOR')" th:href="@{/editor/articles}" data-key="p-course" class="nav-link menu-link" role="button" aria-expanded="false" aria-controls="sidebarLayouts">
+							<i data-feather="book-open" class="icon-dual"></i> <span data-key="t-layouts">Articles</span>
 						</a>
 					</li>
 					<!-- end Dashboard Menu -->

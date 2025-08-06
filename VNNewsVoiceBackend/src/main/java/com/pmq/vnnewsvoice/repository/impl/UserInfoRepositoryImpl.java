@@ -180,6 +180,14 @@ public class UserInfoRepositoryImpl implements UserInfoRepository {
                     predicates.add(builder.equal(root.get("roleId").get("name"),filters.get("role")));
                 }
             }
+            if(filters.containsKey("roleFilter")){
+                String[] roles = filters.get("roleFilter").split(",");
+                List<Predicate> rolePredicates = new ArrayList<>();
+                for(String role : roles) {
+                    rolePredicates.add(builder.equal(root.get("roleId").get("name"), "ROLE_" + role));
+                }
+                predicates.add(builder.or(rolePredicates.toArray(new Predicate[0])));
+            }
         }
         return predicates;
     }

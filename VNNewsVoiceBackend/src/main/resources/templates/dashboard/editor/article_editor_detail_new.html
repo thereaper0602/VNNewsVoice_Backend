@@ -1,0 +1,684 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6" layout:decorate="~{layout}">
+
+<th:block layout:fragment="pagetitle">
+    <div th:replace="~{partials/title-meta :: title-meta('Chỉnh sửa bài viết')}"></div>
+</th:block>
+
+<head>
+    <th:block layout:fragment="head-css">
+        <style>
+            /* CSS cho phần hiển thị bài viết */
+            .article-detail-editor {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .article-info {
+                text-align: center;
+            }
+        </style>
+    </th:block>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <!-- Breadcrumb -->
+        <div th:replace="~{partials/page-title :: page-title('Chi tiết bài viết','Bài viết')}"></div>
+        
+        <div class="container-fluid">
+
+                    <!-- Thông báo -->
+                    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="ri-check-double-line me-2"></i> <span th:text="${success}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="ri-error-warning-line me-2"></i> <span th:text="${error}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+
+                    <!-- Nội dung chính -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <!-- Tiêu đề và thông tin bài viết -->
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <h4 class="card-title" th:text="${article.title}">Tiêu đề bài viết</h4>
+                                        <div>
+                                            <a th:href="@{'/editor/articles'}" class="btn btn-secondary me-2">
+                                                <i class="ri-arrow-left-line align-middle me-1"></i> Quay lại
+                                            </a>
+                                            <button sec:authorize="hasRole('EDITOR')" th:if="${article.status.name() == 'DRAFT' || article.status.name() == 'REJECTED'}" 
+                                                type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#submitArticleModal">
+                                                <i class="ri-send-plane-fill align-middle me-1"></i> Yêu cầu duyệt
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Thông tin bài viết -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <strong>Trạng thái:</strong>
+                                                <span th:if="${article.status.name() == 'DRAFT'}" class="badge bg-warning">Bản nháp</span>
+                                                <span th:if="${article.status.name() == 'PENDING'}" class="badge bg-info">Chờ duyệt</span>
+                                                <span th:if="${article.status.name() == 'PUBLISHED'}" class="badge bg-success">Đã xuất bản</span>
+                                                <span th:if="${article.status.name() == 'REJECTED'}" class="badge bg-danger">Bị từ chối</span>
+                                            </div>
+                                            <div class="mb-3">
+                                                <strong>Danh mục:</strong>
+                                                <span th:text="${article.categoryId.name}">Danh mục</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <strong>Ngày tạo:</strong>
+                                                <span th:text="${#dates.format(article.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2023</span>
+                                            </div>
+                                            <div class="mb-3">
+                                                <strong>Cập nhật lần cuối:</strong>
+                                                <span th:text="${#dates.format(article.updatedAt, 'dd/MM/yyyy HH:mm')}">01/01/2023</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Nội dung bài viết -->
+                                    <div class="article-content mb-4">
+                                        <h5 class="mb-3">Nội dung bài viết</h5>
+                                        <div id="article-blocks" class="mb-4">
+                                            <!-- Hiển thị các block nội dung -->
+                                            <div th:each="block : ${article.blocks}" th:id="'block-' + ${block.id}" class="article-block mb-3">
+                                                <!-- Block paragraph -->
+                                                <div th:if="${block.type == 'PARAGRAPH'}" class="paragraph-block p-3 border rounded">
+                                                    <p th:text="${block.content}" class="mb-0">Nội dung đoạn văn</p>
+                                                </div>
+                                                
+                                                <!-- Block heading -->
+                                                <div th:if="${block.type == 'HEADING'}" class="heading-block p-3 border rounded">
+                                                    <h3 th:text="${block.content}" class="mb-0">Tiêu đề</h3>
+                                                </div>
+                                                
+                                                <!-- Block image -->
+                                                <div th:if="${block.type == 'IMAGE'}" class="image-block p-3 border rounded">
+                                                    <img th:src="${block.content}" class="img-fluid rounded" alt="Hình ảnh bài viết">
+                                                    <p th:if="${block.caption}" th:text="${block.caption}" class="text-muted mt-2 mb-0">Chú thích hình ảnh</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Phần tóm tắt -->
+                                    <div class="summary-section mb-4">
+                                        <h5 class="mb-3">Tóm tắt bài viết</h5>
+                                        <div id="summary-content" class="summary-content p-3 bg-light rounded mb-3">
+                                            <div th:if="${article.summary}" class="mb-3">
+                                                <p th:text="${article.summary}">Nội dung tóm tắt</p>
+                                            </div>
+                                            <p class="text-muted" th:unless="${article.summary}">Chưa có tóm tắt. Nhấn nút 'Tạo tóm tắt' để tạo tóm tắt tự động.</p>
+                                        </div>
+                                        <div id="summary-loading" class="summary-loading text-center d-none mb-3">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Đang tạo tóm tắt...</span>
+                                            </div>
+                                            <p class="mt-2">Đang tạo tóm tắt...</p>
+                                        </div>
+                                        <div class="summary-actions">
+                                            <button sec:authorize="hasRole('EDITOR')" id="generateSummaryBtn" class="btn btn-primary me-2"
+                                                th:classappend="${article.summary} ? 'd-none' : ''">Tạo tóm tắt</button>
+                                            <button sec:authorize="hasRole('EDITOR')" id="regenerateSummaryBtn" class="btn btn-outline-primary"
+                                                th:classappend="${article.summary} ? '' : 'd-none'">Tạo lại tóm tắt</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Phần audio -->
+                                    <div class="tts-section mb-4">
+                                        <h5 class="mb-3">Audio bài viết</h5>
+                                        <div id="tts-content" class="tts-content p-3 bg-light rounded mb-3">
+                                            <div th:if="${article.audioUrl}" class="audio-player-container">
+                                                <audio id="tts-audio-player" controls class="w-100 mb-2">
+                                                    <source th:src="${article.audioUrl}" type="audio/wav">
+                                                    Trình duyệt của bạn không hỗ trợ phát audio.
+                                                </audio>
+                                                <p class="text-muted small">URL: <span id="current-audio-url" th:text="${article.audioUrl}"></span></p>
+                                            </div>
+                                            <p class="text-muted" th:unless="${article.audioUrl}">Chưa có audio. Nhấn nút 'Tạo audio' để tạo audio tự động.</p>
+                                        </div>
+                                        <div id="tts-loading" class="tts-loading text-center d-none mb-3">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Đang tạo audio...</span>
+                                            </div>
+                                            <p class="mt-2">Đang tạo audio...</p>
+                                        </div>
+                                        <div class="tts-actions">
+                                            <button sec:authorize="hasRole('EDITOR')" id="generateTTSBtn" class="btn btn-primary me-2"
+                                                th:classappend="${article.audioUrl} ? 'd-none' : ''">Tạo audio</button>
+                                            <button sec:authorize="hasRole('EDITOR')" id="regenerateTTSBtn" class="btn btn-outline-primary me-2"
+                                                th:classappend="${article.audioUrl} ? '' : 'd-none'">Tạo lại audio</button>
+                                            <button sec:authorize="hasRole('EDITOR')" id="deleteTTSBtn" class="btn btn-outline-danger"
+                                                th:classappend="${article.audioUrl} ? '' : 'd-none'">Xóa audio</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div th:replace="~{dashboard/fragments/footer :: footer}"></div>
+        </div>
+    </div>
+
+    <!-- Modal xác nhận yêu cầu duyệt bài -->
+    <div class="modal fade" id="submitArticleModal" tabindex="-1" aria-labelledby="submitArticleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="submitArticleModalLabel">Xác nhận yêu cầu duyệt bài</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="ri-alert-line me-2"></i>
+                        <strong>Lưu ý quan trọng:</strong> Sau khi nộp bài để yêu cầu duyệt, bạn sẽ không thể chỉnh
+                        sửa bài viết này nữa cho đến khi nó được phê duyệt hoặc bị từ chối.
+                    </div>
+                    <div id="summary-warning" class="alert alert-danger d-none">
+                        <i class="ri-error-warning-line me-2"></i>
+                        <strong>Thiếu tóm tắt:</strong> Bạn cần tạo tóm tắt cho bài viết trước khi yêu cầu duyệt.
+                    </div>
+                    <div id="audio-warning" class="alert alert-danger d-none">
+                        <i class="ri-error-warning-line me-2"></i>
+                        <strong>Thiếu audio:</strong> Bạn cần tạo audio cho bài viết trước khi yêu cầu duyệt.
+                    </div>
+                    <p>Bạn có chắc chắn muốn nộp bài viết "<span th:text="${article.title}"></span>" để yêu cầu
+                        duyệt không?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <form id="submitArticleForm"
+                        th:action="@{'/editor/articles/' + ${article.slug} + '_' + ${article.id} + '/submit'}"
+                        method="post">
+                        <button sec:authorize="hasRole('EDITOR')" id="confirmSubmitBtn" type="submit" class="btn btn-danger">Xác nhận nộp bài</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="toast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i id="toast-icon" class="ri-checkbox-circle-line text-success me-2"></i>
+                <strong class="me-auto" id="toast-title">Thông báo</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toast-message">
+                Thao tác thành công!
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/assets/libs/jquery/jquery.min.js"></script>
+    <script src="/assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/libs/metismenu/metisMenu.min.js"></script>
+    <script src="/assets/libs/simplebar/simplebar.min.js"></script>
+    <script src="/assets/libs/node-waves/waves.min.js"></script>
+    <script src="/assets/js/app.js"></script>
+
+    <!-- Custom JavaScript -->
+    <th:block th:inline="javascript">
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Khởi tạo các phần tử UI
+                const summaryContent = document.getElementById('summary-content');
+                const summaryLoading = document.getElementById('summary-loading');
+                const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+                const regenerateSummaryBtn = document.getElementById('regenerateSummaryBtn');
+                
+                const ttsContent = document.getElementById('tts-content');
+                const ttsLoading = document.getElementById('tts-loading');
+                const generateTTSBtn = document.getElementById('generateTTSBtn');
+                const regenerateTTSBtn = document.getElementById('regenerateTTSBtn');
+                const deleteTTSBtn = document.getElementById('deleteTTSBtn');
+
+                // Khởi tạo biến tóm tắt và audio dựa trên dữ liệu hiện có
+                let currentSummary = /*[[${ article.summary }]]*/ null;
+                let hasSummary = /*[[${ article.summary != null }]]*/ false;
+
+                let currentAudioUrl = /*[[${ article.audioUrl }]]*/ null;
+                let hasAudio = /*[[${ article.audioUrl != null }]]*/ false;
+
+                // Kiểm tra thêm sau khi trang đã tải
+                console.log('Initial currentSummary:', currentSummary);
+                console.log('Initial hasSummary:', hasSummary);
+                console.log('Initial currentAudioUrl:', currentAudioUrl);
+                console.log('Initial hasAudio:', hasAudio);
+                
+                if (currentSummary && currentSummary !== 'null' && currentSummary !== "null" && currentSummary !== '') {
+                    hasSummary = true;
+                    console.log('Setting hasSummary to true');
+                } else {
+                    hasSummary = false;
+                    currentSummary = null;
+                    console.log('Setting hasSummary to false');
+                }
+
+                if (currentAudioUrl && currentAudioUrl !== 'null' && currentAudioUrl !== "null" && currentAudioUrl !== '') {
+                    hasAudio = true;
+                    console.log('Setting hasAudio to true');
+                } else {
+                    hasAudio = false;
+                    currentAudioUrl = null;
+                    console.log('Setting hasAudio to false');
+                }
+                
+                // Hàm hiển thị toast notification
+                function showToast(message, type = 'success') {
+                    const toast = document.getElementById('toast');
+                    const toastMessage = document.getElementById('toast-message');
+                    const toastIcon = document.getElementById('toast-icon');
+                    const toastTitle = document.getElementById('toast-title');
+                    
+                    toastMessage.textContent = message;
+                    
+                    if (type === 'success') {
+                        toastIcon.className = 'ri-checkbox-circle-line text-success me-2';
+                        toastTitle.textContent = 'Thành công';
+                    } else if (type === 'error') {
+                        toastIcon.className = 'ri-error-warning-line text-danger me-2';
+                        toastTitle.textContent = 'Lỗi';
+                    } else if (type === 'warning') {
+                        toastIcon.className = 'ri-alert-line text-warning me-2';
+                        toastTitle.textContent = 'Cảnh báo';
+                    } else if (type === 'info') {
+                        toastIcon.className = 'ri-information-line text-info me-2';
+                        toastTitle.textContent = 'Thông tin';
+                    }
+                    
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+                }
+
+                // Hàm lấy nội dung từ tất cả các block paragraph
+                function getAllParagraphContent() {
+                    const blocks = document.querySelectorAll('.paragraph-block p');
+                    if (blocks.length === 0) {
+                        return null;
+                    }
+                    
+                    let content = '';
+                    blocks.forEach(block => {
+                        content += block.textContent + '\n\n';
+                    });
+                    
+                    return content.trim();
+                }
+
+                // Hàm tạo tóm tắt
+                async function generateSummary(maxLength = 200) {
+                    // Hiển thị trạng thái đang tải
+                    summaryLoading.classList.remove('d-none');
+                    summaryContent.innerHTML = '<p class="text-muted">Đang tạo tóm tắt...</p>';
+                    generateSummaryBtn.disabled = true;
+                    regenerateSummaryBtn.disabled = true;
+
+                    try {
+                        // Lấy nội dung từ tất cả các block paragraph
+                        const content = getAllParagraphContent();
+
+                        if (!content) {
+                            throw new Error('Không tìm thấy nội dung để tóm tắt');
+                        }
+
+                        // Gửi request đến Spring Boot API thay vì FastAPI
+                        const articleId = /*[[${ article.id }]]*/ 0;
+                        const articleSlug = /*[[${ article.slug }]]*/ '';
+                        
+                        const response = await fetch(`/editor/content/articles/${articleSlug}_${articleId}/generate-summary`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                content: content,
+                                max_length: maxLength
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Lỗi khi tạo tóm tắt: ${response.statusText}`);
+                        }
+
+                        const data = await response.json();
+                        console.log('API response:', data);
+
+                        // Kiểm tra cấu trúc dữ liệu trả về
+                        if (data.success) {
+                            // Xử lý dữ liệu tóm tắt từ cấu trúc
+                            let summaryText = '';
+                            let originalLength = 0;
+                            let summaryLength = 0;
+                            let compressionRatio = 0;
+
+                            if (data.data && data.data.length > 0 && data.data[0].summary) {
+                                summaryText = data.data[0].summary;
+                                originalLength = data.data[0].original_length || 0;
+                                summaryLength = data.data[0].summary_length || 0;
+                                compressionRatio = data.data[0].compression_ratio || 0;
+                                currentSummary = summaryText;
+                                hasSummary = true;
+                            } else {
+                                // Fallback nếu không tìm thấy dữ liệu tóm tắt trong cấu trúc
+                                summaryText = 'Đã tạo tóm tắt thành công nhưng không thể hiển thị nội dung.';
+                                currentSummary = summaryText;
+                                hasSummary = true;
+                            }
+
+                            // Hiển thị tóm tắt và thông tin bổ sung
+                            let summaryHTML = `<p class="mb-3">${summaryText}</p>`;
+
+                            // Thêm thông tin về độ dài và tỷ lệ nén nếu có
+                            if (originalLength > 0 || summaryLength > 0 || compressionRatio > 0) {
+                                summaryHTML += `<div class="summary-stats small text-muted">`;
+                                if (originalLength > 0) {
+                                    summaryHTML += `<div>Độ dài ban đầu: ${originalLength} ký tự</div>`;
+                                }
+                                if (summaryLength > 0) {
+                                    summaryHTML += `<div>Độ dài tóm tắt: ${summaryLength} ký tự</div>`;
+                                }
+                                if (compressionRatio > 0) {
+                                    summaryHTML += `<div>Tỷ lệ nén: ${(compressionRatio * 100).toFixed(1)}%</div>`;
+                                }
+                                summaryHTML += `</div>`;
+                            }
+
+                            summaryContent.innerHTML = summaryHTML;
+
+                            // Hiển thị nút tạo lại tóm tắt
+                            generateSummaryBtn.classList.add('d-none');
+                            regenerateSummaryBtn.classList.remove('d-none');
+
+                            showToast('Đã tạo tóm tắt thành công!', 'success');
+                        } else {
+                            throw new Error(data.message || 'Không thể tạo tóm tắt');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        summaryContent.innerHTML = `<p class="text-danger">Lỗi: ${error.message}</p>`;
+                        hasSummary = false;
+                        currentSummary = null;
+                        showToast(`Lỗi khi tạo tóm tắt: ${error.message}`, 'error');
+                    } finally {
+                        // Ẩn trạng thái đang tải
+                        summaryLoading.classList.add('d-none');
+                        generateSummaryBtn.disabled = false;
+                        regenerateSummaryBtn.disabled = false;
+                    }
+                }
+
+                // Hàm tạo audio
+                async function generateTTS() {
+                    // Hiển thị trạng thái đang tải
+                    ttsLoading.classList.remove('d-none');
+                    ttsContent.innerHTML = '<p class="text-muted">Đang tạo audio...</p>';
+                    generateTTSBtn.disabled = true;
+                    regenerateTTSBtn.disabled = true;
+                    deleteTTSBtn.disabled = true;
+
+                    try {
+                        // Lấy nội dung từ tất cả các block paragraph
+                        const content = getAllParagraphContent();
+
+                        if (!content) {
+                            throw new Error('Không tìm thấy nội dung để tạo audio');
+                        }
+
+                        // Gửi request đến Spring Boot API thay vì FastAPI
+                        const articleId = /*[[${ article.id }]]*/ 0;
+                        const articleSlug = /*[[${ article.slug }]]*/ '';
+                        
+                        const response = await fetch(`/editor/content/articles/${articleSlug}_${articleId}/generate-tts`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                text: content,
+                                voice_name: 'Zephyr'
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Lỗi khi tạo audio: ${response.statusText}`);
+                        }
+
+                        const data = await response.json();
+                        console.log('TTS API response:', data);
+
+                        // Kiểm tra cấu trúc dữ liệu trả về
+                        if (data.success) {
+                            // Xử lý dữ liệu audio từ cấu trúc
+                            let audioUrl = '';
+                            let audioSize = 0;
+                            let voiceName = '';
+                            let textLength = 0;
+
+                            if (data.data && data.data.length > 0) {
+                                audioUrl = data.data[0].audio_url.trim();
+                                audioSize = data.data[0].audio_size || 0;
+                                voiceName = data.data[0].voice_name || '';
+                                textLength = data.data[0].text_length || 0;
+                                
+                                // Cập nhật biến trạng thái
+                                currentAudioUrl = audioUrl;
+                                hasAudio = true;
+                                
+                                // Tạo HTML cho audio player
+                                let audioHTML = `
+                                    <div class="audio-player-container">
+                                        <audio id="tts-audio-player" controls class="w-100 mb-2">
+                                            <source src="${audioUrl}" type="audio/wav">
+                                            Trình duyệt của bạn không hỗ trợ phát audio.
+                                        </audio>
+                                        <p class="text-muted small">URL: <span id="current-audio-url">${audioUrl}</span></p>
+                                    </div>
+                                `;
+                                
+                                // Thêm thông tin về audio nếu có
+                                if (audioSize > 0 || voiceName || textLength > 0) {
+                                    audioHTML += `<div class="audio-stats small text-muted">`;
+                                    if (audioSize > 0) {
+                                        const audioSizeMB = (audioSize / (1024 * 1024)).toFixed(2);
+                                        audioHTML += `<div>Kích thước: ${audioSizeMB} MB</div>`;
+                                    }
+                                    if (voiceName) {
+                                        audioHTML += `<div>Giọng đọc: ${voiceName}</div>`;
+                                    }
+                                    if (textLength > 0) {
+                                        audioHTML += `<div>Độ dài văn bản: ${textLength} ký tự</div>`;
+                                    }
+                                    audioHTML += `</div>`;
+                                }
+                                
+                                // Cập nhật UI
+                                ttsContent.innerHTML = audioHTML;
+                                generateTTSBtn.classList.add('d-none');
+                                regenerateTTSBtn.classList.remove('d-none');
+                                deleteTTSBtn.classList.remove('d-none');
+                                
+                                showToast('Đã tạo audio thành công!', 'success');
+                            } else {
+                                throw new Error('Không thể tạo audio');
+                            }
+                        } else {
+                            throw new Error(data.message || 'Không thể tạo audio');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        ttsContent.innerHTML = `<p class="text-danger">Lỗi: ${error.message}</p>`;
+                        hasAudio = false;
+                        currentAudioUrl = null;
+                        showToast(`Lỗi khi tạo audio: ${error.message}`, 'error');
+                    } finally {
+                        // Ẩn trạng thái đang tải
+                        ttsLoading.classList.add('d-none');
+                        generateTTSBtn.disabled = false;
+                        regenerateTTSBtn.disabled = false;
+                        deleteTTSBtn.disabled = false;
+                    }
+                }
+
+                // Hàm xóa audio
+                async function deleteTTS() {
+                    if (!currentAudioUrl) {
+                        showToast('Không có audio để xóa', 'warning');
+                        return;
+                    }
+
+                    try {
+                        // Hiển thị trạng thái đang xóa
+                        ttsLoading.classList.remove('d-none');
+                        generateTTSBtn.disabled = true;
+                        regenerateTTSBtn.disabled = true;
+                        deleteTTSBtn.disabled = true;
+
+                        // Gửi request đến Spring Boot API thay vì FastAPI
+                        const articleId = /*[[${ article.id }]]*/ 0;
+                        const articleSlug = /*[[${ article.slug }]]*/ '';
+                        
+                        const response = await fetch(`/editor/content/articles/${articleSlug}_${articleId}/delete-tts`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                audio_url: currentAudioUrl
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Lỗi khi xóa audio: ${response.statusText}`);
+                        }
+
+                        const data = await response.json();
+                        console.log('Delete API response:', data);
+
+                        if (data.success) {
+                            // Cập nhật UI
+                            ttsContent.innerHTML = '<p class="text-muted">Chưa có audio. Nhấn nút \'Tạo audio\' để tạo audio tự động.</p>';
+                            generateTTSBtn.classList.remove('d-none');
+                            regenerateTTSBtn.classList.add('d-none');
+                            deleteTTSBtn.classList.add('d-none');
+
+                            // Cập nhật biến trạng thái
+                            hasAudio = false;
+                            currentAudioUrl = null;
+
+                            showToast('Đã xóa audio thành công!', 'success');
+                        } else {
+                            throw new Error(data.message || 'Không thể xóa audio');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showToast(`Lỗi khi xóa audio: ${error.message}`, 'error');
+                    } finally {
+                        // Ẩn trạng thái đang tải
+                        ttsLoading.classList.add('d-none');
+                        generateTTSBtn.disabled = false;
+                        regenerateTTSBtn.disabled = false;
+                        deleteTTSBtn.disabled = false;
+                    }
+                }
+
+                // Thêm sự kiện cho các nút
+                if (generateSummaryBtn) {
+                    generateSummaryBtn.addEventListener('click', () => generateSummary(200));
+                }
+
+                if (regenerateSummaryBtn) {
+                    regenerateSummaryBtn.addEventListener('click', () => generateSummary(200));
+                }
+
+                if (generateTTSBtn) {
+                    generateTTSBtn.addEventListener('click', generateTTS);
+                }
+
+                if (regenerateTTSBtn) {
+                    regenerateTTSBtn.addEventListener('click', generateTTS);
+                }
+
+                if (deleteTTSBtn) {
+                    deleteTTSBtn.addEventListener('click', deleteTTS);
+                }
+
+                // Kiểm tra audio và tóm tắt trước khi yêu cầu phê duyệt
+                const submitArticleModal = document.getElementById('submitArticleModal');
+                const confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
+                const summaryWarning = document.getElementById('summary-warning');
+                const audioWarning = document.getElementById('audio-warning');
+
+                if (submitArticleModal) {
+                    submitArticleModal.addEventListener('show.bs.modal', function() {
+                        let canSubmit = true;
+
+                        // Kiểm tra xem đã có tóm tắt chưa
+                        console.log('Submit check - hasSummary:', hasSummary);
+                        console.log('Submit check - currentSummary:', currentSummary);
+                        
+                        // Kiểm tra summary theo nhiều điều kiện
+                        const summaryElement = document.querySelector('.summary-content');
+                        const summaryTextExists = summaryElement && summaryElement.textContent && summaryElement.textContent.trim() !== '';
+                        const hasValidSummary = (hasSummary && currentSummary && currentSummary.trim() !== '') || summaryTextExists;
+                        
+                        if (!hasValidSummary) {
+                            summaryWarning.classList.remove('d-none');
+                            canSubmit = false;
+                            console.log('Summary warning shown - No valid summary found');
+                        } else {
+                            summaryWarning.classList.add('d-none');
+                            console.log('Summary warning hidden - Valid summary found');
+                        }
+
+                        // Kiểm tra xem đã có audio chưa
+                        console.log('Submit check - hasAudio:', hasAudio);
+                        console.log('Submit check - currentAudioUrl:', currentAudioUrl);
+                        console.log('Submit check - tts-audio-player exists:', !!document.getElementById('tts-audio-player'));
+                        
+                        // Kiểm tra audio theo nhiều điều kiện
+                        const audioPlayerExists = !!document.getElementById('tts-audio-player');
+                        const hasValidAudio = (hasAudio && currentAudioUrl && currentAudioUrl.trim() !== '') || audioPlayerExists;
+                        
+                        if (!hasValidAudio) {
+                            audioWarning.classList.remove('d-none');
+                            canSubmit = false;
+                            console.log('Audio warning shown - No valid audio found');
+                        } else {
+                            audioWarning.classList.add('d-none');
+                            console.log('Audio warning hidden - Valid audio found');
+                        }
+
+                        // Cập nhật trạng thái nút xác nhận
+                        confirmSubmitBtn.disabled = !canSubmit;
+                    });
+                }
+            });
+        </script>
+    </div> <!-- Đóng layout:fragment="content" -->
+    </th:block>
+
+<th:block layout:fragment="pagejs">
+    <!-- Các script cần thiết -->
+    <script src="/assets/libs/jquery/jquery.min.js"></script>
+    <script src="/assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+</th:block>
+</body>
+</html>

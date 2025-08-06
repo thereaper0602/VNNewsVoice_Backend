@@ -12,4 +12,6 @@ public interface NotificationService {
     long countNotifications();
     long countUnreadNotifications();
     List<Notification> getNotificationsByUserId(Long userId);
+    List<Notification> getNotificationsByUserIdPaginated(Long userId, int page, int size);
+    long countNotificationsByUserId(Long userId);
 }

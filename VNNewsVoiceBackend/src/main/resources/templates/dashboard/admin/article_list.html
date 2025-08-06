@@ -32,7 +32,7 @@
             <div class="col-lg-12">
                 <div class="d-flex align-items-center gap-2">
                     <form th:action="@{/admin/articles/fetch}" method="post">
-                        <button type="submit" class="btn btn-primary">
+                        <button sec:authorize="hasRole('ADMIN')" type="submit" class="btn btn-primary">
                             <i class="ri-download-cloud-2-line align-bottom me-1"></i> Fetch các bài viết mới
                         </button>
                     </form>
@@ -122,7 +122,6 @@
 
                                         <!-- Title -->
                                         <h5 class="card-title">
-                                            <!-- Bằng dòng đúng -->
                                             <a th:href="@{/admin/articles/{slug}_{id}(slug=${article.slug}, id=${article.id})}" class="text-dark" th:text="${article.title}"></a>
                                         </h5>
 
@@ -173,7 +172,7 @@
                                                     </li>
                                                     <li class="dropdown-divider"></li>
                                                     <li>
-                                                        <a class="dropdown-item delete-article" href="#"
+                                                        <a sec:authorize="hasRole('ADMIN')" class="dropdown-item delete-article" href="#"
                                                             data-bs-toggle="modal" data-bs-target="#deleteArticleModal"
                                                             th:data-id="${article.id}">
                                                             <i
@@ -215,7 +214,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Có, xóa nó!</button>
+                        <button sec:authorize="hasRole('ADMIN')" type="button" class="btn btn-danger" id="confirmDeleteBtn">Có, xóa nó!</button>
                     </div>
                 </div>
             </div>

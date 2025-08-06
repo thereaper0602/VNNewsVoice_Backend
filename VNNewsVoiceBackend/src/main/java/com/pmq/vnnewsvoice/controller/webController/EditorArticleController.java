@@ -1,5 +1,6 @@
 package com.pmq.vnnewsvoice.controller.webController;
 
+import com.pmq.vnnewsvoice.enums.ArticleStatus;
 import com.pmq.vnnewsvoice.helpers.PaginationHelper;
 import com.pmq.vnnewsvoice.pojo.*;
 import com.pmq.vnnewsvoice.service.*;
@@ -41,7 +42,6 @@ public class EditorArticleController {
     public String listArticles(
             Model model,
             @RequestParam Map<String, String> params,
-            RedirectAttributes redirectAttributes,
             @AuthenticationPrincipal CustomUserDetails principal) {
 
         Optional<UserInfo> user = userInfoService.getUserById(principal.getUserInfo().getId());
@@ -226,11 +226,12 @@ public class EditorArticleController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> saveAudioUrl(@PathVariable String slug,
             @PathVariable Long id,
-            @RequestBody Map<String, Object> payload) {
+            @RequestBody Map<String, Object> payload,@AuthenticationPrincipal CustomUserDetails principal) {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            Optional<Article> articleOpt = articleService.getArticleBySlugAndId(slug, id);
+            Optional<Article> articleOpt = articleService.getArticleBySlugAndIdWithPermissionCheck(slug, id,
+                    principal.getUserInfo());
             if (articleOpt.isEmpty()) {
                 response.put("success", false);
                 response.put("message", "Không tìm thấy bài viết");
@@ -258,6 +259,53 @@ public class EditorArticleController {
             response.put("success", false);
             response.put("message", "Lỗi khi lưu audio URL: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @PostMapping("/articles/{slug}_{id}/submit")
+    public String submitArticle(@PathVariable String slug,
+                                @PathVariable Long id,
+                                RedirectAttributes redirectAttributes,
+                                @AuthenticationPrincipal CustomUserDetails principal) {
+        try {
+            Optional<Article> articleOpt = articleService.getArticleBySlugAndIdWithPermissionCheck(slug, id,
+                    principal.getUserInfo());
+
+            if (articleOpt.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy bài viết");
+                return "redirect:/editor/articles";
+            }
+
+            Article article = articleOpt.get();
+
+            if (!article.getIsBeingEdited()) {
+                redirectAttributes.addFlashAttribute("error", "Bài viết không đang trong trạng thái chỉnh sửa");
+                return "redirect:/editor/articles/" + slug + "_" + id;
+            }
+
+            // Kiểm tra xem bài viết đã có tóm tắt chưa
+            if (article.getSummary() == null || article.getSummary().trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Bài viết cần có tóm tắt trước khi gửi phê duyệt");
+                return "redirect:/editor/articles/" + slug + "_" + id;
+            }
+
+            // Kiểm tra xem bài viết đã có audio chưa
+            if (article.getAudioUrl() == null || article.getAudioUrl().trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Bài viết cần có audio trước khi gửi phê duyệt");
+                return "redirect:/editor/articles/" + slug + "_" + id;
+            }
+
+            // Cập nhật trạng thái bài viết
+            article.setStatus(ArticleStatus.PENDING);
+            article.setIsBeingEdited(false);
+            article.setEditStartedAt(null);
+            articleService.updateArticle(article);
+
+            redirectAttributes.addFlashAttribute("success", "Đã gửi bài viết thành công");
+            return "redirect:/editor/articles/" + slug + "_" + id;
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi gửi bài viết: " + e.getMessage());
+            return "redirect:/editor/articles/";
         }
     }
 

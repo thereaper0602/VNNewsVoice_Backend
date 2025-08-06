@@ -302,21 +302,21 @@
 
                     <!-- Thông báo khi bài viết đang chờ phê duyệt -->
                     <div class="alert alert-secondary"
-                        th:if="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).PENDING && !article.isBeingEdited}">
+                        th:if="${article.status != null && article.status.name() == T(com.pmq.vnnewsvoice.enums.ArticleStatus).PENDING.name() && !article.isBeingEdited}">
                         <i class="ri-information-line me-1"></i> Bài viết đang trong trạng thái phê duyệt và không thể
                         chỉnh sửa.
                     </div>
 
                     <!-- Thông báo khi bài viết bị từ chối -->
                     <div class="alert alert-danger"
-                        th:if="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED && !article.isBeingEdited}">
+                        th:if="${article.status != null && article.status.name() == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED.name() && !article.isBeingEdited}">
                         <i class="ri-information-line me-1"></i> Bài viết đã bị từ chối. Vui lòng bắt đầu chỉnh sửa để
                         khắc phục.
                     </div>
 
                     <!-- Thông báo khi bài viết ở trạng thái nháp và chưa chỉnh sửa -->
                     <div class="alert alert-warning"
-                        th:if="${article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT && !article.isBeingEdited}">
+                        th:if="${article.status != null && article.status.name() == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT.name() && !article.isBeingEdited}">
                         <i class="ri-information-line me-1"></i> Bạn cần bắt đầu chỉnh sửa trước khi thực hiện thay đổi.
                     </div>
                 </div>
@@ -428,7 +428,7 @@
 
                 <!-- Nút bắt đầu chỉnh sửa: hiển thị khi chưa trong trạng thái chỉnh sửa và không phải đang chờ phê duyệt hoặc đã xuất bản -->
                 <form
-                    th:if="${!article.isBeingEdited && (article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT || article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED)}"
+                    th:if="${!article.isBeingEdited && (article.status != null && (article.status.name() == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT.name() || article.status.name() == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED.name()))}"
                     th:action="@{'/editor/articles/' + ${article.slug} + '_' + ${article.id} + '/start-editing'}"
                     method="post" style="display: inline;">
                     <button sec:authorize="hasRole('EDITOR')" type="submit" class="btn btn-primary">Bắt đầu chỉnh sửa</button>
@@ -441,7 +441,7 @@
 
                 <!-- Nút yêu cầu duyệt bài: chỉ hiển thị khi đang chỉnh sửa và ở trạng thái nháp hoặc bị từ chối -->
                 <button sec:authorize="hasRole('EDITOR')"
-                    th:if="${article.isBeingEdited && (article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT || article.status == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED)}"
+                    th:if="${article.isBeingEdited && (article.status != null && (article.status.name() == T(com.pmq.vnnewsvoice.enums.ArticleStatus).DRAFT.name() || article.status.name() == T(com.pmq.vnnewsvoice.enums.ArticleStatus).REJECTED.name()))}"
                     type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#submitArticleModal">
                     Yêu cầu duyệt bài
                 </button>
@@ -516,7 +516,7 @@
         <div th:if="${article.isBeingEdited}" class="summary-section mt-4 mb-4 p-3 border rounded">
             <h4 class="summary-heading mb-3">Tóm tắt bài viết</h4>
             <div id="summary-content" class="summary-content p-3 bg-light rounded mb-3">
-                <p class="text-muted" th:if="${article.summary}" th:text="${article.summary}"></p>
+                <p class="text-muted" id="text-summarize" th:if="${article.summary}" th:text="${article.summary}"></p>
                 <p class="text-muted" th:unless="${article.summary}" th:text="${Chưa có tóm tắt. Nhấn nút /'Tạo tóm tắt/' để tạo tóm tắt tự động.}"></p>
             </div>
             <div id="summary-loading" class="summary-loading text-center d-none mb-3">
@@ -569,395 +569,467 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- JavaScript cho xem trước ảnh và xử lý lưu thay đổi -->
-        <th:block layout:fragment="pagejs">
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    // Lưu trữ các block đã chỉnh sửa
-                    let editedBlocks = [];
-                    // let currentSummary = '';
-                    // let hasSummary = false;
+    <!-- JavaScript cho xem trước ảnh và xử lý lưu thay đổi -->
+    <th:block layout:fragment="pagejs">
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Lưu trữ các block đã chỉnh sửa
+                let editedBlocks = [];
+                
+                // Khởi tạo các phần tử UI
+                const summaryContent = document.getElementById('summary-content');
+                const summaryLoading = document.getElementById('summary-loading');
+                const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+                const regenerateSummaryBtn = document.getElementById('regenerateSummaryBtn');
+                
+                const ttsContent = document.getElementById('tts-content');
+                const ttsLoading = document.getElementById('tts-loading');
+                const generateTTSBtn = document.getElementById('generateTTSBtn');
+                const regenerateTTSBtn = document.getElementById('regenerateTTSBtn');
+                const deleteTTSBtn = document.getElementById('deleteTTSBtn');
 
-                    // Kiểm tra trạng thái chỉnh sửa
-                    const isBeingEdited = [[${ article.isBeingEdited }]];
+                // Khởi tạo biến tóm tắt và audio dựa trên dữ liệu hiện có
+                let currentSummary = /*[[${ article.summary }]]*/ null;
+                let hasSummary = /*[[${ article.summary != null }]]*/ false;
 
-                    // Vô hiệu hóa các nút chỉnh sửa nếu không trong trạng thái chỉnh sửa
-                    if (!isBeingEdited) {
-                        const editButtons = document.querySelectorAll('.edit-block-btn');
-                        editButtons.forEach(button => {
-                            button.disabled = true;
-                            button.style.opacity = 0;
-                            button.style.cursor = 'not-allowed';
-                            button.setAttribute('data-bs-toggle', '');
-                        });
+                let currentAudioUrl = /*[[${ article.audioUrl }]]*/ null;
+                let hasAudio = /*[[${ article.audioUrl != null }]]*/ false;
+
+                // Kiểm tra thêm sau khi trang đã tải
+                console.log('Initial currentSummary:', currentSummary);
+                console.log('Initial hasSummary:', hasSummary);
+                console.log('Initial currentAudioUrl:', currentAudioUrl);
+                console.log('Initial hasAudio:', hasAudio);
+                
+                if (currentSummary && currentSummary !== 'null' && currentSummary !== "null" && currentSummary !== '') {
+                    hasSummary = true;
+                    console.log('Setting hasSummary to true');
+                } else {
+                    hasSummary = false;
+                    currentSummary = null;
+                    console.log('Setting hasSummary to false');
+                }
+
+                if (currentAudioUrl && currentAudioUrl !== 'null' && currentAudioUrl !== "null" && currentAudioUrl !== '') {
+                    hasAudio = true;
+                    console.log('Setting hasAudio to true');
+                } else {
+                    hasAudio = false;
+                    currentAudioUrl = null;
+                    console.log('Setting hasAudio to false');
+                }
+                
+                // Cập nhật UI dựa trên trạng thái
+                if (hasSummary && summaryContent) {
+                    summaryContent.innerHTML = `<p class="mb-3">${currentSummary}</p>`;
+                    generateSummaryBtn.classList.add('d-none');
+                    regenerateSummaryBtn.classList.remove('d-none');
+                }
+                
+                if (hasAudio && ttsContent && currentAudioUrl) {
+                    let audioHTML = `
+                        <div class="audio-player-container">
+                            <audio id="tts-audio-player" controls class="w-100 mb-2">
+                                <source src="${currentAudioUrl}" type="audio/wav">
+                                Trình duyệt của bạn không hỗ trợ phát audio.
+                            </audio>
+                            <p class="text-muted small">URL: <span id="current-audio-url">${currentAudioUrl}</span></p>
+                        </div>
+                    `;
+                    ttsContent.innerHTML = audioHTML;
+                    generateTTSBtn.classList.add('d-none');
+                    regenerateTTSBtn.classList.remove('d-none');
+                    deleteTTSBtn.classList.remove('d-none');
+                }
+
+                // Kiểm tra trạng thái chỉnh sửa
+                const isBeingEdited = [[${ article.isBeingEdited }]];
+
+                // Vô hiệu hóa các nút chỉnh sửa nếu không trong trạng thái chỉnh sửa
+                if (!isBeingEdited) {
+                    const editButtons = document.querySelectorAll('.edit-block-btn');
+                    editButtons.forEach(button => {
+                        button.disabled = true;
+                        button.style.opacity = 0;
+                        button.style.cursor = 'not-allowed';
+                        button.setAttribute('data-bs-toggle', '');
+                    });
+                }
+
+                // Xử lý xem trước ảnh khi thay đổi URL
+                const imageInputs = document.querySelectorAll('.block-src');
+                imageInputs.forEach(input => {
+                    input.addEventListener('input', function () {
+                        const blockId = this.id.split('-')[1];
+                        const previewImg = document.getElementById('imagePreview-' + blockId);
+                        if (previewImg) {
+                            previewImg.src = this.value;
+
+                            // Xử lý lỗi khi ảnh không tải được
+                            previewImg.onerror = function () {
+                                this.src = 'https://via.placeholder.com/300x200?text=Ảnh+không+tồn+tại';
+                            };
+                        }
+                    });
+                });
+
+                // Xử lý sự kiện lưu thay đổi cho từng block
+                const saveBlockButtons = document.querySelectorAll('.save-block-btn');
+                saveBlockButtons.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const blockId = this.getAttribute('data-block-id');
+                        const blockType = this.getAttribute('data-block-type');
+                        saveBlockChanges(blockId, blockType);
+                    });
+                });
+
+                // Xử lý sự kiện lưu tất cả thay đổi
+                const saveAllButton = document.getElementById('confirmSaveChanges');
+                saveAllButton.addEventListener('click', function () {
+                    saveAllChanges();
+                });
+
+                // Hàm lưu thay đổi cho từng block
+                function saveBlockChanges(blockId, blockType) {
+                    let blockData = {
+                        id: blockId,
+                        type: blockType
+                    };
+
+                    // Lấy dữ liệu dựa trên loại block
+                    switch (blockType) {
+                        case 'paragraph':
+                            blockData.content = document.getElementById('content-' + blockId).value;
+                            // Cập nhật nội dung hiển thị ngay lập tức
+                            document.querySelector('#block-' + blockId + ' .text-block').innerHTML = blockData.content;
+                            break;
+                        case 'image':
+                            blockData.src = document.getElementById('src-' + blockId).value;
+                            blockData.alt = document.getElementById('alt-' + blockId).value;
+                            blockData.caption = document.getElementById('caption-' + blockId).value;
+                            // Cập nhật hình ảnh hiển thị ngay lập tức
+                            const imgElement = document.querySelector('#block-' + blockId + ' img');
+                            if (imgElement) imgElement.src = blockData.src;
+                            if (imgElement) imgElement.alt = blockData.alt;
+                            const captionElement = document.querySelector('#block-' + blockId + ' .caption');
+                            if (captionElement) captionElement.textContent = blockData.caption;
+                            break;
+                        case 'heading':
+                            blockData.text = document.getElementById('text-' + blockId).value;
+                            blockData.tag = document.getElementById('tag-' + blockId).value;
+                            // Cập nhật tiêu đề hiển thị ngay lập tức
+                            const headingElement = document.querySelector('#block-' + blockId + ' ' + (blockData.tag || 'h2'));
+                            if (headingElement) headingElement.textContent = blockData.text;
+                            break;
                     }
 
-                    // Xử lý xem trước ảnh khi thay đổi URL
-                    const imageInputs = document.querySelectorAll('.block-src');
-                    imageInputs.forEach(input => {
-                        input.addEventListener('input', function () {
-                            const blockId = this.id.split('-')[1];
-                            const previewImg = document.getElementById('imagePreview-' + blockId);
-                            if (previewImg) {
-                                previewImg.src = this.value;
+                    // Kiểm tra xem block đã được chỉnh sửa trước đó chưa
+                    const existingIndex = editedBlocks.findIndex(block => block.id === blockId);
+                    if (existingIndex !== -1) {
+                        // Cập nhật block đã tồn tại
+                        editedBlocks[existingIndex] = blockData;
+                    } else {
+                        // Thêm block mới vào danh sách đã chỉnh sửa
+                        editedBlocks.push(blockData);
+                    }
 
-                                // Xử lý lỗi khi ảnh không tải được
-                                previewImg.onerror = function () {
-                                    this.src = 'https://via.placeholder.com/300x200?text=Ảnh+không+tồn+tại';
-                                };
-                            }
-                        });
-                    });
+                    console.log('Block đã được chỉnh sửa:', blockData);
+                    console.log('Danh sách các block đã chỉnh sửa:', editedBlocks);
+                }
 
-                    // Xử lý sự kiện lưu thay đổi cho từng block
-                    const saveBlockButtons = document.querySelectorAll('.save-block-btn');
-                    saveBlockButtons.forEach(button => {
-                        button.addEventListener('click', function () {
-                            const blockId = this.getAttribute('data-block-id');
-                            const blockType = this.getAttribute('data-block-type');
-                            saveBlockChanges(blockId, blockType);
-                        });
-                    });
+                // Hàm lưu tất cả thay đổi
+                function saveAllChanges() {
+                    if (editedBlocks.length === 0 && !hasSummary && !hasAudio) {
+                        showToast('Không có thay đổi nào để lưu!');
+                        return;
+                    }
 
-                    // Xử lý sự kiện lưu tất cả thay đổi
-                    const saveAllButton = document.getElementById('confirmSaveChanges');
-                    saveAllButton.addEventListener('click', function () {
-                        saveAllChanges();
-                    });
-
-                    // Hàm lưu thay đổi cho từng block
-                    function saveBlockChanges(blockId, blockType) {
-                        let blockData = {
-                            id: blockId,
-                            type: blockType
-                        };
-
-                        // Lấy dữ liệu dựa trên loại block
-                        switch (blockType) {
-                            case 'paragraph':
-                                blockData.content = document.getElementById('content-' + blockId).value;
-                                // Cập nhật nội dung hiển thị ngay lập tức
-                                document.querySelector('#block-' + blockId + ' .text-block').innerHTML = blockData.content;
-                                break;
-                            case 'image':
-                                blockData.src = document.getElementById('src-' + blockId).value;
-                                blockData.alt = document.getElementById('alt-' + blockId).value;
-                                blockData.caption = document.getElementById('caption-' + blockId).value;
-                                // Cập nhật hình ảnh hiển thị ngay lập tức
-                                const imgElement = document.querySelector('#block-' + blockId + ' img');
-                                if (imgElement) imgElement.src = blockData.src;
-                                if (imgElement) imgElement.alt = blockData.alt;
-                                const captionElement = document.querySelector('#block-' + blockId + ' .caption');
-                                if (captionElement) captionElement.textContent = blockData.caption;
-                                break;
-                            case 'heading':
-                                blockData.text = document.getElementById('text-' + blockId).value;
-                                blockData.tag = document.getElementById('tag-' + blockId).value;
-                                // Cập nhật tiêu đề hiển thị ngay lập tức
-                                const headingElement = document.querySelector('#block-' + blockId + ' ' + (blockData.tag || 'h2'));
-                                if (headingElement) headingElement.textContent = blockData.text;
-                                break;
-                        }
-
-                        // Kiểm tra xem block đã được chỉnh sửa trước đó chưa
-                        const existingIndex = editedBlocks.findIndex(block => block.id === blockId);
-                        if (existingIndex !== -1) {
-                            // Cập nhật block đã tồn tại
-                            editedBlocks[existingIndex] = blockData;
+                    // Thêm tóm tắt vào dữ liệu gửi đi nếu có
+                    if (hasSummary) {
+                        // Kiểm tra xem summary đã có trong editedBlocks chưa
+                        const summaryIndex = editedBlocks.findIndex(block => block.type === 'summary');
+                        if (summaryIndex !== -1) {
+                            // Cập nhật summary nếu đã có
+                            editedBlocks[summaryIndex].content = currentSummary;
                         } else {
-                            // Thêm block mới vào danh sách đã chỉnh sửa
-                            editedBlocks.push(blockData);
+                            // Thêm summary nếu chưa có
+                            editedBlocks.push({
+                                type: 'summary',
+                                content: currentSummary
+                            });
                         }
-
-                        console.log('Block đã được chỉnh sửa:', blockData);
-                        console.log('Danh sách các block đã chỉnh sửa:', editedBlocks);
                     }
 
-                    // Hàm lưu tất cả thay đổi
-                    function saveAllChanges() {
-                        if (editedBlocks.length === 0 && !hasSummary && !hasAudio) {
-                            showToast('Không có thay đổi nào để lưu!');
-                            return;
-                        }
+                    const articleSlug = document.location.pathname.split('/').slice(-1)[0].split('_')[0];
+                    const articleId = document.location.pathname.split('/').slice(-1)[0].split('_')[1];
+                    const url = '/editor/articles/' + articleSlug + '_' + articleId + '/save-all-changes';
 
-                        // Thêm tóm tắt vào dữ liệu gửi đi nếu có
-                        if (hasSummary) {
-                            // Kiểm tra xem summary đã có trong editedBlocks chưa
-                            const summaryIndex = editedBlocks.findIndex(block => block.type === 'summary');
-                            if (summaryIndex !== -1) {
-                                // Cập nhật summary nếu đã có
-                                editedBlocks[summaryIndex].content = currentSummary;
+                    // Chuẩn bị dữ liệu gửi đi
+                    const requestData = {
+                        blocks: editedBlocks,
+                        summary: hasSummary ? currentSummary : null
+                    };
+
+                    // Thêm audio URL vào dữ liệu gửi đi nếu có
+                    if (hasAudio && currentAudioUrl) {
+                        requestData.audioUrl = currentAudioUrl;
+                    }
+
+                    // Gửi request lưu tất cả thay đổi
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestData)
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showToast(data.message || 'Đã lưu tất cả thay đổi thành công!');
+                                
+                                // Cập nhật trạng thái biến toàn cục
+                                if (requestData.summary) {
+                                    hasSummary = true;
+                                    currentSummary = requestData.summary;
+                                }
+                                
+                                if (requestData.audioUrl) {
+                                    hasAudio = true;
+                                    currentAudioUrl = requestData.audioUrl;
+                                }
+                                
+                                // Làm mới trang sau 1 giây
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 1000);
                             } else {
-                                // Thêm summary nếu chưa có
-                                editedBlocks.push({
-                                    type: 'summary',
-                                    content: currentSummary
-                                });
+                                showToast('Lỗi: ' + (data.message || 'Không thể lưu thay đổi'), 'error');
                             }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            showToast('Lỗi kết nối: ' + error.message, 'error');
+                        });
+                }
+
+                // Hiển thị thông báo toast
+                function showToast(message, type = 'success') {
+                    const toastEl = document.getElementById('saveToast');
+                    const toastMessage = document.getElementById('toastMessage');
+                    toastMessage.textContent = message;
+
+                    // Xóa các class cũ
+                    toastEl.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'text-white');
+
+                    // Thêm class mới dựa trên loại thông báo
+                    if (type === 'success') {
+                        toastEl.classList.add('bg-success', 'text-white');
+                    } else if (type === 'error') {
+                        toastEl.classList.add('bg-danger', 'text-white');
+                    } else if (type === 'warning') {
+                        toastEl.classList.add('bg-warning', 'text-white');
+                    }
+
+                    const toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                }
+
+                // Xử lý chức năng tóm tắt bài viết
+                // const summaryContent = document.getElementById('summary-content');
+                // const summaryLoading = document.getElementById('summary-loading');
+                // // Biến lưu trữ tóm tắt hiện tại
+                // const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+                // const regenerateSummaryBtn = document.getElementById('regenerateSummaryBtn');
+
+                // const generateTTSBtn = document.getElementById('generateTTSBtn');
+                // const regenerateTTSBtn = document.getElementById('regenerateTTSBtn');
+                // const deleteTTSBtn = document.getElementById('deleteTTSBtn');
+                // const ttsContent = document.getElementById('tts-content');
+                // const ttsLoading = document.getElementById('tts-loading');
+
+                // Hàm lấy nội dung từ tất cả các block paragraph
+                function getAllParagraphContent() {
+                    const paragraphBlocks = document.querySelectorAll('.text-block');
+                    let content = '';
+                    paragraphBlocks.forEach(block => {
+                        content += block.innerText + '\n\n';
+                    });
+                    return content.trim();
+                }
+
+                // Hàm tạo tóm tắt
+                async function generateSummary(maxLength = 200) {
+                    // Hiển thị trạng thái đang tải
+                    summaryLoading.classList.remove('d-none');
+                    summaryContent.innerHTML = '<p class="text-muted">Đang tạo tóm tắt...</p>';
+                    generateSummaryBtn.disabled = true;
+                    regenerateSummaryBtn.disabled = true;
+
+                    try {
+                        // Lấy nội dung từ tất cả các block paragraph
+                        const content = getAllParagraphContent();
+
+                        if (!content) {
+                            throw new Error('Không tìm thấy nội dung để tóm tắt');
                         }
 
-                        const articleSlug = document.location.pathname.split('/').slice(-1)[0].split('_')[0];
-                        const articleId = document.location.pathname.split('/').slice(-1)[0].split('_')[1];
-                        const url = '/editor/articles/' + articleSlug + '_' + articleId + '/save-all-changes';
-
-                        // Chuẩn bị dữ liệu gửi đi
-                        const requestData = {
-                            blocks: editedBlocks,
-                            summary: hasSummary ? currentSummary : null
-                        };
-
-                        // Thêm audio URL vào dữ liệu gửi đi nếu có
-                        if (hasAudio && currentAudioUrl) {
-                            requestData.audioUrl = currentAudioUrl;
-                        }
-
-                        // Gửi request lưu tất cả thay đổi
-                        fetch(url, {
+                        // Gửi request đến FastAPI server
+                        const response = await fetch('http://localhost:8000/api/v1/summarize', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify(requestData)
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    showToast(data.message || 'Đã lưu tất cả thay đổi thành công!');
-                                    // Làm mới trang sau 1 giây
-                                    setTimeout(() => {
-                                        window.location.reload();
-                                    }, 1000);
-                                } else {
-                                    showToast('Lỗi: ' + (data.message || 'Không thể lưu thay đổi'), 'error');
-                                }
+                            body: JSON.stringify({
+                                content: content,
+                                max_length: maxLength
                             })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                showToast('Lỗi kết nối: ' + error.message, 'error');
-                            });
-                    }
-
-                    // Hiển thị thông báo toast
-                    function showToast(message, type = 'success') {
-                        const toastEl = document.getElementById('saveToast');
-                        const toastMessage = document.getElementById('toastMessage');
-                        toastMessage.textContent = message;
-
-                        // Xóa các class cũ
-                        toastEl.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'text-white');
-
-                        // Thêm class mới dựa trên loại thông báo
-                        if (type === 'success') {
-                            toastEl.classList.add('bg-success', 'text-white');
-                        } else if (type === 'error') {
-                            toastEl.classList.add('bg-danger', 'text-white');
-                        } else if (type === 'warning') {
-                            toastEl.classList.add('bg-warning', 'text-white');
-                        }
-
-                        const toast = new bootstrap.Toast(toastEl);
-                        toast.show();
-                    }
-
-                    // Xử lý chức năng tóm tắt bài viết
-                    const summaryContent = document.getElementById('summary-content');
-                    const summaryLoading = document.getElementById('summary-loading');
-                    // Biến lưu trữ tóm tắt hiện tại
-                    let currentSummary = '';
-                    let hasSummary = false;
-                    const generateSummaryBtn = document.getElementById('generateSummaryBtn');
-                    const regenerateSummaryBtn = document.getElementById('regenerateSummaryBtn');
-                    
-                    // Biến lưu trữ audio URL hiện tại
-                    let currentAudioUrl = '';
-                    let hasAudio = false;
-                    const generateTTSBtn = document.getElementById('generateTTSBtn');
-                    const regenerateTTSBtn = document.getElementById('regenerateTTSBtn');
-                    const deleteTTSBtn = document.getElementById('deleteTTSBtn');
-                    const ttsContent = document.getElementById('tts-content');
-                    const ttsLoading = document.getElementById('tts-loading');
-
-                    // Hàm lấy nội dung từ tất cả các block paragraph
-                    function getAllParagraphContent() {
-                        const paragraphBlocks = document.querySelectorAll('.text-block');
-                        let content = '';
-                        paragraphBlocks.forEach(block => {
-                            content += block.innerText + '\n\n';
                         });
-                        return content.trim();
-                    }
 
-                    // Hàm tạo tóm tắt
-                    async function generateSummary(maxLength = 200) {
-                        // Hiển thị trạng thái đang tải
-                        summaryLoading.classList.remove('d-none');
-                        summaryContent.innerHTML = '<p class="text-muted">Đang tạo tóm tắt...</p>';
-                        generateSummaryBtn.disabled = true;
-                        regenerateSummaryBtn.disabled = true;
-
-                        try {
-                            // Lấy nội dung từ tất cả các block paragraph
-                            const content = getAllParagraphContent();
-
-                            if (!content) {
-                                throw new Error('Không tìm thấy nội dung để tóm tắt');
-                            }
-
-                            // Gửi request đến FastAPI server
-                            const response = await fetch('http://localhost:8000/api/v1/summarize', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    content: content,
-                                    max_length: maxLength
-                                })
-                            });
-
-                            if (!response.ok) {
-                                throw new Error(`Lỗi khi tạo tóm tắt: ${response.statusText}`);
-                            }
-
-                            const data = await response.json();
-                            console.log('API response:', data);
-
-                            // Kiểm tra cấu trúc dữ liệu trả về
-                            if (data.success) {
-                                // Xử lý dữ liệu tóm tắt từ cấu trúc mới
-                                let summaryText = '';
-                                let originalLength = 0;
-                                let summaryLength = 0;
-                                let compressionRatio = 0;
-
-                                if (data.data && data.data.length > 0 && data.data[0].summary) {
-                                    summaryText = data.data[0].summary;
-                                    originalLength = data.data[0].original_length || 0;
-                                    summaryLength = data.data[0].summary_length || 0;
-                                    compressionRatio = data.data[0].compression_ratio || 0;
-                                    currentSummary = summaryText;
-                                    hasSummary = true;
-                                } else {
-                                    // Fallback nếu không tìm thấy dữ liệu tóm tắt trong cấu trúc mới
-                                    summaryText = 'Đã tạo tóm tắt thành công nhưng không thể hiển thị nội dung.';
-                                    currentSummary = summaryText;
-                                    hasSummary = true;
-                                }
-
-                                // Hiển thị tóm tắt và thông tin bổ sung
-                                let summaryHTML = `<p class="mb-3">${summaryText}</p>`;
-
-                                // Thêm thông tin về độ dài và tỷ lệ nén nếu có
-                                if (originalLength > 0 || summaryLength > 0 || compressionRatio > 0) {
-                                    summaryHTML += `<div class="summary-stats small text-muted">`;
-                                    if (originalLength > 0) {
-                                        summaryHTML += `<div>Độ dài ban đầu: ${originalLength} ký tự</div>`;
-                                    }
-                                    if (summaryLength > 0) {
-                                        summaryHTML += `<div>Độ dài tóm tắt: ${summaryLength} ký tự</div>`;
-                                    }
-                                    if (compressionRatio > 0) {
-                                        summaryHTML += `<div>Tỷ lệ nén: ${(compressionRatio * 100).toFixed(1)}%</div>`;
-                                    }
-                                    summaryHTML += `</div>`;
-                                }
-
-                                summaryContent.innerHTML = summaryHTML;
-
-                                // Hiển thị nút tạo lại tóm tắt
-                                generateSummaryBtn.classList.add('d-none');
-                                regenerateSummaryBtn.classList.remove('d-none');
-
-                                showToast('Đã tạo tóm tắt thành công!', 'success');
-                            } else {
-                                throw new Error(data.message || 'Không thể tạo tóm tắt');
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            summaryContent.innerHTML = `<p class="text-danger">Lỗi: ${error.message}</p>`;
-                            showToast(`Lỗi khi tạo tóm tắt: ${error.message}`, 'error');
-                            hasSummary = false;
-                            currentSummary = '';
-                        } finally {
-                            // Ẩn trạng thái đang tải
-                            summaryLoading.classList.add('d-none');
-                            generateSummaryBtn.disabled = false;
-                            regenerateSummaryBtn.disabled = false;
+                        if (!response.ok) {
+                            throw new Error(`Lỗi khi tạo tóm tắt: ${response.statusText}`);
                         }
-                    }
 
-                    // Thêm sự kiện cho nút tạo tóm tắt
-                    if (generateSummaryBtn) {
-                        generateSummaryBtn.addEventListener('click', () => generateSummary(200));
-                    }
+                        const data = await response.json();
+                        console.log('API response:', data);
 
-                    // Thêm sự kiện cho nút tạo lại tóm tắt
-                    if (regenerateSummaryBtn) {
-                        regenerateSummaryBtn.addEventListener('click', () => generateSummary(200));
-                    }
-                    
-                    // Hàm tạo audio TTS
-                    async function generateTTS() {
-                        // Hiển thị trạng thái đang tải
-                        ttsLoading.classList.remove('d-none');
-                        ttsContent.innerHTML = '<p class="text-muted">Đang tạo audio...</p>';
-                        generateTTSBtn.disabled = true;
-                        regenerateTTSBtn.disabled = true;
-                        deleteTTSBtn.disabled = true;
+                        // Kiểm tra cấu trúc dữ liệu trả về
+                        if (data.success) {
+                            // Xử lý dữ liệu tóm tắt từ cấu trúc mới
+                            let summaryText = '';
+                            let originalLength = 0;
+                            let summaryLength = 0;
+                            let compressionRatio = 0;
 
-                        try {
-                            // Lấy nội dung từ tất cả các block paragraph
-                            const content = getAllParagraphContent();
-
-                            if (!content) {
-                                throw new Error('Không tìm thấy nội dung để tạo audio');
+                            if (data.data && data.data.length > 0 && data.data[0].summary) {
+                                summaryText = data.data[0].summary;
+                                originalLength = data.data[0].original_length || 0;
+                                summaryLength = data.data[0].summary_length || 0;
+                                compressionRatio = data.data[0].compression_ratio || 0;
+                                currentSummary = summaryText;
+                                hasSummary = true;
+                            } else {
+                                // Fallback nếu không tìm thấy dữ liệu tóm tắt trong cấu trúc mới
+                                summaryText = 'Đã tạo tóm tắt thành công nhưng không thể hiển thị nội dung.';
+                                currentSummary = summaryText;
+                                hasSummary = true;
                             }
 
-                            // Gửi request đến TTS API
-                            const response = await fetch('http://127.0.0.1:8000/api/v1/tts/upload', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    text: content,
-                                    voice_name: 'Zephyr'
-                                })
-                            });
+                            // Hiển thị tóm tắt và thông tin bổ sung
+                            let summaryHTML = `<p class="mb-3">${summaryText}</p>`;
 
-                            if (!response.ok) {
-                                throw new Error(`Lỗi khi tạo audio: ${response.statusText}`);
-                            }
-
-                            const data = await response.json();
-                            console.log('TTS API response:', data);
-
-                            // Kiểm tra cấu trúc dữ liệu trả về
-                            if (data.success) {
-                                // Xử lý dữ liệu audio từ cấu trúc
-                                let audioUrl = '';
-                                let audioSize = 0;
-                                let voiceName = '';
-                                let textLength = 0;
-
-                                if (data.data && data.data.length > 0) {
-                                    audioUrl = data.data[0].audio_url.trim();
-                                    audioSize = data.data[0].audio_size || 0;
-                                    voiceName = data.data[0].voice_name || '';
-                                    textLength = data.data[0].text_length || 0;
-                                    currentAudioUrl = audioUrl;
-                                    hasAudio = true;
-
-                                    // Lưu audio URL vào article
-                                    await saveAudioUrl(audioUrl);
-                                } else {
-                                    // Fallback nếu không tìm thấy dữ liệu audio trong cấu trúc
-                                    throw new Error('Đã tạo audio thành công nhưng không thể lấy đường dẫn.');
+                            // Thêm thông tin về độ dài và tỷ lệ nén nếu có
+                            if (originalLength > 0 || summaryLength > 0 || compressionRatio > 0) {
+                                summaryHTML += `<div class="summary-stats small text-muted">`;
+                                if (originalLength > 0) {
+                                    summaryHTML += `<div>Độ dài ban đầu: ${originalLength} ký tự</div>`;
                                 }
+                                if (summaryLength > 0) {
+                                    summaryHTML += `<div>Độ dài tóm tắt: ${summaryLength} ký tự</div>`;
+                                }
+                                if (compressionRatio > 0) {
+                                    summaryHTML += `<div>Tỷ lệ nén: ${(compressionRatio * 100).toFixed(1)}%</div>`;
+                                }
+                                summaryHTML += `</div>`;
+                            }
 
-                                // Hiển thị audio player và thông tin bổ sung
-                                let audioHTML = `
+                            summaryContent.innerHTML = summaryHTML;
+
+                            // Hiển thị nút tạo lại tóm tắt
+                            generateSummaryBtn.classList.add('d-none');
+                            regenerateSummaryBtn.classList.remove('d-none');
+
+                            showToast('Đã tạo tóm tắt thành công!', 'success');
+                        } else {
+                            throw new Error(data.message || 'Không thể tạo tóm tắt');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        summaryContent.innerHTML = `<p class="text-danger">Lỗi: ${error.message}</p>`;
+                        showToast(`Lỗi khi tạo tóm tắt: ${error.message}`, 'error');
+                        hasSummary = false;
+                        currentSummary = '';
+                    } finally {
+                        // Ẩn trạng thái đang tải
+                        summaryLoading.classList.add('d-none');
+                        generateSummaryBtn.disabled = false;
+                        regenerateSummaryBtn.disabled = false;
+                    }
+                }
+
+                // Thêm sự kiện cho nút tạo tóm tắt
+                if (generateSummaryBtn) {
+                    generateSummaryBtn.addEventListener('click', () => generateSummary(200));
+                }
+
+                // Thêm sự kiện cho nút tạo lại tóm tắt
+                if (regenerateSummaryBtn) {
+                    regenerateSummaryBtn.addEventListener('click', () => generateSummary(200));
+                }
+
+                // Hàm tạo audio TTS
+                async function generateTTS() {
+                    // Hiển thị trạng thái đang tải
+                    ttsLoading.classList.remove('d-none');
+                    ttsContent.innerHTML = '<p class="text-muted">Đang tạo audio...</p>';
+                    generateTTSBtn.disabled = true;
+                    regenerateTTSBtn.disabled = true;
+                    deleteTTSBtn.disabled = true;
+
+                    try {
+                        // Lấy nội dung từ tất cả các block paragraph
+                        const content = getAllParagraphContent();
+
+                        if (!content) {
+                            throw new Error('Không tìm thấy nội dung để tạo audio');
+                        }
+
+                        // Gửi request đến TTS API
+                        const response = await fetch('http://127.0.0.1:8000/api/v1/tts/upload', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                text: content,
+                                voice_name: 'Zephyr'
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Lỗi khi tạo audio: ${response.statusText}`);
+                        }
+
+                        const data = await response.json();
+                        console.log('TTS API response:', data);
+
+                        // Kiểm tra cấu trúc dữ liệu trả về
+                        if (data.success) {
+                            // Xử lý dữ liệu audio từ cấu trúc
+                            let audioUrl = '';
+                            let audioSize = 0;
+                            let voiceName = '';
+                            let textLength = 0;
+
+                            if (data.data && data.data.length > 0) {
+                                audioUrl = data.data[0].audio_url.trim();
+                                audioSize = data.data[0].audio_size || 0;
+                                voiceName = data.data[0].voice_name || '';
+                                textLength = data.data[0].text_length || 0;
+                                currentAudioUrl = audioUrl;
+                                hasAudio = true;
+
+                                // Lưu audio URL vào article
+                                await saveAudioUrl(audioUrl);
+                            } else {
+                                // Fallback nếu không tìm thấy dữ liệu audio trong cấu trúc
+                                throw new Error('Đã tạo audio thành công nhưng không thể lấy đường dẫn.');
+                            }
+
+                            // Hiển thị audio player và thông tin bổ sung
+                            let audioHTML = `
                                     <div class="audio-player-container">
                                         <audio id="tts-audio-player" controls class="w-100 mb-2">
                                             <source src="${audioUrl}" type="audio/wav">
@@ -967,203 +1039,223 @@
                                     </div>
                                 `;
 
-                                // Thêm thông tin về kích thước và giọng đọc nếu có
-                                if (audioSize > 0 || voiceName || textLength > 0) {
-                                    audioHTML += `<div class="audio-stats small text-muted">`;
-                                    if (voiceName) {
-                                        audioHTML += `<div>Giọng đọc: ${voiceName}</div>`;
-                                    }
-                                    if (audioSize > 0) {
-                                        const audioSizeMB = (audioSize / (1024 * 1024)).toFixed(2);
-                                        audioHTML += `<div>Kích thước: ${audioSizeMB} MB</div>`;
-                                    }
-                                    if (textLength > 0) {
-                                        audioHTML += `<div>Độ dài văn bản: ${textLength} ký tự</div>`;
-                                    }
-                                    audioHTML += `</div>`;
+                            // Thêm thông tin về kích thước và giọng đọc nếu có
+                            if (audioSize > 0 || voiceName || textLength > 0) {
+                                audioHTML += `<div class="audio-stats small text-muted">`;
+                                if (voiceName) {
+                                    audioHTML += `<div>Giọng đọc: ${voiceName}</div>`;
                                 }
-
-                                ttsContent.innerHTML = audioHTML;
-
-                                // Hiển thị nút tạo lại và xóa audio
-                                generateTTSBtn.classList.add('d-none');
-                                regenerateTTSBtn.classList.remove('d-none');
-                                deleteTTSBtn.classList.remove('d-none');
-
-                                showToast('Đã tạo audio thành công!', 'success');
-                            } else {
-                                throw new Error(data.message || 'Không thể tạo audio');
+                                if (audioSize > 0) {
+                                    const audioSizeMB = (audioSize / (1024 * 1024)).toFixed(2);
+                                    audioHTML += `<div>Kích thước: ${audioSizeMB} MB</div>`;
+                                }
+                                if (textLength > 0) {
+                                    audioHTML += `<div>Độ dài văn bản: ${textLength} ký tự</div>`;
+                                }
+                                audioHTML += `</div>`;
                             }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            ttsContent.innerHTML = `<p class="text-danger">Lỗi: ${error.message}</p>`;
-                            showToast(`Lỗi khi tạo audio: ${error.message}`, 'error');
+
+                            ttsContent.innerHTML = audioHTML;
+
+                            // Hiển thị nút tạo lại và xóa audio
+                            generateTTSBtn.classList.add('d-none');
+                            regenerateTTSBtn.classList.remove('d-none');
+                            deleteTTSBtn.classList.remove('d-none');
+
+                            showToast('Đã tạo audio thành công!', 'success');
+                        } else {
+                            throw new Error(data.message || 'Không thể tạo audio');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        ttsContent.innerHTML = `<p class="text-danger">Lỗi: ${error.message}</p>`;
+                        showToast(`Lỗi khi tạo audio: ${error.message}`, 'error');
+                        hasAudio = false;
+                        currentAudioUrl = '';
+                    } finally {
+                        // Ẩn trạng thái đang tải
+                        ttsLoading.classList.add('d-none');
+                        generateTTSBtn.disabled = false;
+                        regenerateTTSBtn.disabled = false;
+                        deleteTTSBtn.disabled = false;
+                    }
+                }
+
+                // Hàm xóa audio TTS
+                async function deleteTTS() {
+                    if (!currentAudioUrl && !hasAudio) {
+                        showToast('Không có audio để xóa', 'warning');
+                        return;
+                    }
+
+                    try {
+                        // Lấy URL audio hiện tại
+                        const audioUrlElement = document.getElementById('current-audio-url');
+                        const audioUrl = audioUrlElement ? audioUrlElement.textContent : currentAudioUrl;
+
+                        if (!audioUrl) {
+                            throw new Error('Không tìm thấy URL audio để xóa');
+                        }
+
+                        // Hiển thị trạng thái đang xóa
+                        ttsLoading.classList.remove('d-none');
+                        generateTTSBtn.disabled = true;
+                        regenerateTTSBtn.disabled = true;
+                        deleteTTSBtn.disabled = true;
+
+                        // Gửi request đến API xóa audio
+                        const response = await fetch('http://127.0.0.1:8000/api/v1/tts/delete-by-url', {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                audio_url: audioUrl
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Lỗi khi xóa audio: ${response.statusText}`);
+                        }
+
+                        const data = await response.json();
+                        console.log('Delete API response:', data);
+
+                        if (data.success) {
+                            // Xóa audio URL khỏi article
+                            await saveAudioUrl(null);
+
+                            // Cập nhật UI
+                            ttsContent.innerHTML = '<p class="text-muted">Chưa có audio. Nhấn nút \'Tạo audio\' để tạo audio tự động.</p>';
+                            generateTTSBtn.classList.remove('d-none');
+                            regenerateTTSBtn.classList.add('d-none');
+                            deleteTTSBtn.classList.add('d-none');
+
+                            // Cập nhật biến trạng thái
                             hasAudio = false;
                             currentAudioUrl = '';
-                        } finally {
-                            // Ẩn trạng thái đang tải
-                            ttsLoading.classList.add('d-none');
-                            generateTTSBtn.disabled = false;
-                            regenerateTTSBtn.disabled = false;
-                            deleteTTSBtn.disabled = false;
+
+                            showToast('Đã xóa audio thành công!', 'success');
+                        } else {
+                            throw new Error(data.message || 'Không thể xóa audio');
                         }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showToast(`Lỗi khi xóa audio: ${error.message}`, 'error');
+                    } finally {
+                        // Ẩn trạng thái đang tải
+                        ttsLoading.classList.add('d-none');
+                        generateTTSBtn.disabled = false;
+                        regenerateTTSBtn.disabled = false;
+                        deleteTTSBtn.disabled = false;
                     }
+                }
 
-                    // Hàm xóa audio TTS
-                    async function deleteTTS() {
-                        if (!currentAudioUrl && !hasAudio) {
-                            showToast('Không có audio để xóa', 'warning');
-                            return;
-                        }
+                // Hàm lưu audio URL vào article
+                async function saveAudioUrl(audioUrl) {
+                    const articleSlug = document.location.pathname.split('/').slice(-1)[0].split('_')[0];
+                    const articleId = document.location.pathname.split('/').slice(-1)[0].split('_')[1];
+                    const url = '/editor/articles/' + articleSlug + '_' + articleId + '/save-audio-url';
 
-                        try {
-                            // Lấy URL audio hiện tại
-                            const audioUrlElement = document.getElementById('current-audio-url');
-                            const audioUrl = audioUrlElement ? audioUrlElement.textContent : currentAudioUrl;
-
-                            if (!audioUrl) {
-                                throw new Error('Không tìm thấy URL audio để xóa');
-                            }
-
-                            // Hiển thị trạng thái đang xóa
-                            ttsLoading.classList.remove('d-none');
-                            generateTTSBtn.disabled = true;
-                            regenerateTTSBtn.disabled = true;
-                            deleteTTSBtn.disabled = true;
-
-                            // Gửi request đến API xóa audio
-                            const response = await fetch('http://127.0.0.1:8000/api/v1/tts/delete-by-url', {
-                                method: 'DELETE',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    audio_url: audioUrl
-                                })
-                            });
-
-                            if (!response.ok) {
-                                throw new Error(`Lỗi khi xóa audio: ${response.statusText}`);
-                            }
-
-                            const data = await response.json();
-                            console.log('Delete API response:', data);
-
-                            if (data.success) {
-                                // Xóa audio URL khỏi article
-                                await saveAudioUrl(null);
-
-                                // Cập nhật UI
-                                ttsContent.innerHTML = '<p class="text-muted">Chưa có audio. Nhấn nút \'Tạo audio\' để tạo audio tự động.</p>';
-                                generateTTSBtn.classList.remove('d-none');
-                                regenerateTTSBtn.classList.add('d-none');
-                                deleteTTSBtn.classList.add('d-none');
-
-                                // Cập nhật biến trạng thái
-                                hasAudio = false;
-                                currentAudioUrl = '';
-
-                                showToast('Đã xóa audio thành công!', 'success');
-                            } else {
-                                throw new Error(data.message || 'Không thể xóa audio');
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            showToast(`Lỗi khi xóa audio: ${error.message}`, 'error');
-                        } finally {
-                            // Ẩn trạng thái đang tải
-                            ttsLoading.classList.add('d-none');
-                            generateTTSBtn.disabled = false;
-                            regenerateTTSBtn.disabled = false;
-                            deleteTTSBtn.disabled = false;
-                        }
-                    }
-
-                    // Hàm lưu audio URL vào article
-                    async function saveAudioUrl(audioUrl) {
-                        const articleSlug = document.location.pathname.split('/').slice(-1)[0].split('_')[0];
-                        const articleId = document.location.pathname.split('/').slice(-1)[0].split('_')[1];
-                        const url = '/editor/articles/' + articleSlug + '_' + articleId + '/save-audio-url';
-
-                        try {
-                            const response = await fetch(url, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    audioUrl: audioUrl
-                                })
-                            });
-
-                            if (!response.ok) {
-                                throw new Error(`Lỗi khi lưu audio URL: ${response.statusText}`);
-                            }
-
-                            const data = await response.json();
-                            console.log('Save audio URL response:', data);
-
-                            if (!data.success) {
-                                throw new Error(data.message || 'Không thể lưu audio URL');
-                            }
-
-                            return true;
-                        } catch (error) {
-                            console.error('Error saving audio URL:', error);
-                            showToast(`Lỗi khi lưu audio URL: ${error.message}`, 'error');
-                            return false;
-                        }
-                    }
-
-                    // Thêm sự kiện cho nút tạo audio
-                    if (generateTTSBtn) {
-                        generateTTSBtn.addEventListener('click', generateTTS);
-                    }
-
-                    // Thêm sự kiện cho nút tạo lại audio
-                    if (regenerateTTSBtn) {
-                        regenerateTTSBtn.addEventListener('click', generateTTS);
-                    }
-
-                    // Thêm sự kiện cho nút xóa audio
-                    if (deleteTTSBtn) {
-                        deleteTTSBtn.addEventListener('click', deleteTTS);
-                    }
-
-                    // Kiểm tra audio và tóm tắt trước khi yêu cầu phê duyệt
-                    const submitArticleModal = document.getElementById('submitArticleModal');
-                    const confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
-                    const summaryWarning = document.getElementById('summary-warning');
-                    const audioWarning = document.getElementById('audio-warning');
-                    
-                    if (submitArticleModal) {
-                        submitArticleModal.addEventListener('show.bs.modal', function() {
-                            let canSubmit = true;
-                            
-                            // Kiểm tra xem đã có tóm tắt chưa
-                            if (!hasSummary) {
-                                summaryWarning.classList.remove('d-none');
-                                canSubmit = false;
-                            } else {
-                                summaryWarning.classList.add('d-none');
-                            }
-                            
-                            // Kiểm tra xem đã có audio chưa
-                            if (!hasAudio && !document.getElementById('tts-audio-player')) {
-                                audioWarning.classList.remove('d-none');
-                                canSubmit = false;
-                            } else {
-                                audioWarning.classList.add('d-none');
-                            }
-                            
-                            // Cập nhật trạng thái nút xác nhận
-                            confirmSubmitBtn.disabled = !canSubmit;
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                audioUrl: audioUrl
+                            })
                         });
+
+                        if (!response.ok) {
+                            throw new Error(`Lỗi khi lưu audio URL: ${response.statusText}`);
+                        }
+
+                        const data = await response.json();
+                        console.log('Save audio URL response:', data);
+
+                        if (!data.success) {
+                            throw new Error(data.message || 'Không thể lưu audio URL');
+                        }
+
+                        return true;
+                    } catch (error) {
+                        console.error('Error saving audio URL:', error);
+                        showToast(`Lỗi khi lưu audio URL: ${error.message}`, 'error');
+                        return false;
                     }
-                });
-            </script>
-        </th:block>
-    </div>
+                }
+
+                // Thêm sự kiện cho nút tạo audio
+                if (generateTTSBtn) {
+                    generateTTSBtn.addEventListener('click', generateTTS);
+                }
+
+                // Thêm sự kiện cho nút tạo lại audio
+                if (regenerateTTSBtn) {
+                    regenerateTTSBtn.addEventListener('click', generateTTS);
+                }
+
+                // Thêm sự kiện cho nút xóa audio
+                if (deleteTTSBtn) {
+                    deleteTTSBtn.addEventListener('click', deleteTTS);
+                }
+
+                // Kiểm tra audio và tóm tắt trước khi yêu cầu phê duyệt
+                const submitArticleModal = document.getElementById('submitArticleModal');
+                const confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
+                const summaryWarning = document.getElementById('summary-warning');
+                const audioWarning = document.getElementById('audio-warning');
+
+                if (submitArticleModal) {
+                    submitArticleModal.addEventListener('show.bs.modal', function() {
+                        let canSubmit = true;
+
+                        // Kiểm tra xem đã có tóm tắt chưa
+                        console.log('Submit check - hasSummary:', hasSummary);
+                        console.log('Submit check - currentSummary:', currentSummary);
+                        
+                        // Kiểm tra summary theo nhiều điều kiện
+                        const summaryElement = document.querySelector('.summary-content');
+                        const summaryTextExists = summaryElement && summaryElement.textContent && summaryElement.textContent.trim() !== '';
+                        const hasValidSummary = (hasSummary && currentSummary && currentSummary.trim() !== '') || summaryTextExists;
+                        
+                        if (!hasValidSummary) {
+                            summaryWarning.classList.remove('d-none');
+                            canSubmit = false;
+                            console.log('Summary warning shown - No valid summary found');
+                        } else {
+                            summaryWarning.classList.add('d-none');
+                            console.log('Summary warning hidden - Valid summary found');
+                        }
+
+                        // Kiểm tra xem đã có audio chưa
+                        console.log('Submit check - hasAudio:', hasAudio);
+                        console.log('Submit check - currentAudioUrl:', currentAudioUrl);
+                        console.log('Submit check - tts-audio-player exists:', !!document.getElementById('tts-audio-player'));
+                        
+                        // Kiểm tra audio theo nhiều điều kiện
+                        const audioPlayerExists = !!document.getElementById('tts-audio-player');
+                        const hasValidAudio = (hasAudio && currentAudioUrl && currentAudioUrl.trim() !== '') || audioPlayerExists;
+                        
+                        if (!hasValidAudio) {
+                            audioWarning.classList.remove('d-none');
+                            canSubmit = false;
+                            console.log('Audio warning shown - No valid audio found');
+                        } else {
+                            audioWarning.classList.add('d-none');
+                            console.log('Audio warning hidden - Valid audio found');
+                        }
+
+                        // Cập nhật trạng thái nút xác nhận
+                        confirmSubmitBtn.disabled = !canSubmit;
+                    });
+                }
+            });
+        </script>
+    </th:block>
+
 </body>
 
 </html>

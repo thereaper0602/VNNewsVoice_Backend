@@ -4,25 +4,14 @@
  */
 package com.pmq.vnnewsvoice.pojo;
 
-import jakarta.persistence.Basic;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Set;
+
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  *
@@ -67,6 +56,7 @@ public class UserInfo implements Serializable {
     private Date createdAt;
     @Column(name = "birthday")
     @Temporal(TemporalType.DATE)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date birthday;
     @Column(name = "is_active")
     private Boolean isActive;
@@ -89,6 +79,11 @@ public class UserInfo implements Serializable {
     private Role roleId;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "userId")
     private Set<UserProvider> userProviderSet;
+    @Column(name = "avatar_public_id")
+    private String avatarPublicId;
+
+    @Transient
+    private MultipartFile avatarFile;
 
     public UserInfo() {
     }
@@ -102,6 +97,22 @@ public class UserInfo implements Serializable {
         this.username = username;
         this.password = password;
         this.email = email;
+    }
+
+    public MultipartFile getAvatarFile() {
+        return avatarFile;
+    }
+
+    public void setAvatarFile(MultipartFile avatarFile) {
+        this.avatarFile = avatarFile;
+    }
+
+    public String getAvatarPublicId() {
+        return avatarPublicId;
+    }
+
+    public void setAvatarPublicId(String avatarPublicId) {
+        this.avatarPublicId = avatarPublicId;
     }
 
     public Long getId() {

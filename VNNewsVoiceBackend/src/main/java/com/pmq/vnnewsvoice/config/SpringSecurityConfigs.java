@@ -34,18 +34,20 @@ public class SpringSecurityConfigs {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(
-                auth -> auth
-                .requestMatchers("/assets/**").permitAll()
-                .requestMatchers("/login").permitAll()
+                .authorizeHttpRequests(
+                        auth -> auth
+                                .requestMatchers("/assets/**").permitAll()
+                                .requestMatchers("/login").permitAll()
 
 
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                
-                .requestMatchers("/editor/**").hasRole("EDITOR")
+                                .requestMatchers("/admin/**").hasRole("ADMIN")
 
-                .requestMatchers("/").authenticated()
-            )
+                                .requestMatchers("/editor/**").hasRole("EDITOR")
+
+                                .requestMatchers("/").authenticated()
+
+                                .requestMatchers("/profile","/current-user/**", "/notifications/**").hasAnyRole("ADMIN", "EDITOR")
+                )
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form
                         -> form.loginPage("/login")
@@ -53,7 +55,12 @@ public class SpringSecurityConfigs {
                         .defaultSuccessUrl("/")
                         .failureUrl("/login?error=true").permitAll())
 
-                .logout(logout -> logout.logoutSuccessUrl("/login").permitAll())
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/login")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID")
+                        .permitAll())
 
                 .httpBasic(httpbasic -> httpbasic.disable());
 //                .oauth2Login(Customizer.withDefaults());
@@ -61,7 +68,7 @@ public class SpringSecurityConfigs {
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource(){
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:3000/"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
