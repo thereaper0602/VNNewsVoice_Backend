@@ -91,9 +91,12 @@ public class EditorArticleController {
             if (article.isPresent()) {
                 List<ArticleBlock> articleBlocks = articleBlockService
                         .getArticleBlocksByArticleId(article.get().getId());
+                
+                // Lấy danh sách categories để hiển thị trong dropdown
+                List<Category> categories = categoryService.getCategories(new HashMap<>());
 
                 model.addAttribute("article", article.get());
-
+                model.addAttribute("categories", categories);
                 model.addAttribute("articleBlocks", articleBlocks);
 
                 return "dashboard/editor/article_editor_detail";
@@ -261,6 +264,68 @@ public class EditorArticleController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+    
+     @PostMapping("/articles/{slug}_{id}/save-category")
+     @ResponseBody
+     public ResponseEntity<Map<String, Object>> saveCategory(@PathVariable String slug,
+             @PathVariable Long id,
+             @RequestBody Map<String, Object> payload,
+             @AuthenticationPrincipal CustomUserDetails principal) {
+         Map<String, Object> response = new HashMap<>();
+
+         try {
+             Optional<Article> articleOpt = articleService.getArticleBySlugAndIdWithPermissionCheck(slug, id,
+                     principal.getUserInfo());
+             if (articleOpt.isEmpty()) {
+                 response.put("success", false);
+                 response.put("message", "Không tìm thấy bài viết");
+                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+             }
+
+             Article article = articleOpt.get();
+
+             // Lấy category ID từ payload
+             String categoryIdStr = (String) payload.get("categoryId");
+            
+             if (categoryIdStr != null && !categoryIdStr.isEmpty()) {
+                 Long categoryId = Long.valueOf(categoryIdStr);
+                 Optional<Category> categoryOpt = categoryService.getCategoryById(categoryId);
+                
+                 if (categoryOpt.isPresent()) {
+                     // Cập nhật category cho bài viết
+                     article.setCategoryId(categoryOpt.get());
+                    
+                     // Cập nhật thời gian chỉnh sửa
+                     article.setUpdatedAt(new Date());
+                    
+                     // Lưu thay đổi
+                     articleService.updateArticle(article);
+                    
+                     response.put("success", true);
+                     response.put("message", "Đã cập nhật danh mục thành công");
+                     response.put("categoryName", categoryOpt.get().getName());
+                     return ResponseEntity.ok(response);
+                 } else {
+                     response.put("success", false);
+                     response.put("message", "Không tìm thấy danh mục");
+                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+                 }
+             } else {
+                 // Nếu categoryId là null hoặc rỗng, xóa category
+                 article.setCategoryId(null);
+                 article.setUpdatedAt(new Date());
+                 articleService.updateArticle(article);
+                
+                 response.put("success", true);
+                 response.put("message", "Đã xóa danh mục thành công");
+                 return ResponseEntity.ok(response);
+             }
+         } catch (Exception e) {
+             response.put("success", false);
+             response.put("message", "Lỗi khi cập nhật danh mục: " + e.getMessage());
+             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+         }
+     }
 
     @PostMapping("/articles/{slug}_{id}/submit")
     public String submitArticle(@PathVariable String slug,

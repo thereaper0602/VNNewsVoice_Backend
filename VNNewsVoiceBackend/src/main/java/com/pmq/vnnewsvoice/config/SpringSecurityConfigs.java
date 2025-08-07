@@ -47,6 +47,8 @@ public class SpringSecurityConfigs {
                                 .requestMatchers("/").authenticated()
 
                                 .requestMatchers("/profile","/current-user/**", "/notifications/**").hasAnyRole("ADMIN", "EDITOR")
+
+                                .requestMatchers("/api/**").permitAll()
                 )
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form

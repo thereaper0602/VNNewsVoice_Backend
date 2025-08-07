@@ -226,6 +226,10 @@
                     <i class="ri-calendar-line"></i>
                     <span th:text="${#dates.format(article.publishedDate, 'dd MMM yyyy')}">Ngày đăng</span>
                 </div>
+                <div class="category-info">
+                    <i class="ri-folder-line"></i>
+                    <span th:text="${article.categoryId != null ? article.categoryId.name : 'Chưa phân loại'}">Danh mục</span>
+                </div>
             </div>
         </div>
         
@@ -278,6 +282,23 @@
             <!-- Thông báo khi bài viết đang được chỉnh sửa -->
             <div class="alert alert-warning" th:if="${article.isBeingEdited}">
                 <i class="ri-information-line me-1"></i> Bài viết đang được chỉnh sửa. Không thể thay đổi editor.
+            </div>
+        </div>
+        
+        <!-- Phần quản lý Category -->
+        <div class="category-assignment">
+            <h3>Phân loại bài viết</h3>
+            <form th:action="@{'/admin/articles/' + ${article.slug} + '_' + ${article.id} + '/save-category'}" method="post" th:if="${!article.isBeingEdited}">
+                <select name="categoryId" class="form-select">
+                    <option value="">Chọn danh mục</option>
+                    <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}" th:selected="${article.categoryId != null && article.categoryId.id == category.id}"></option>
+                </select>
+                <button type="submit" class="btn btn-primary mt-2">Cập nhật danh mục</button>
+            </form>
+            
+            <!-- Thông báo khi bài viết đang được chỉnh sửa -->
+            <div class="alert alert-warning" th:if="${article.isBeingEdited}">
+                <i class="ri-information-line me-1"></i> Bài viết đang được chỉnh sửa. Không thể thay đổi danh mục.
             </div>
         </div>
         

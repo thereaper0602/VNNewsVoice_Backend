@@ -291,7 +291,7 @@
 
                 <!-- Thông báo trạng thái chỉnh sửa -->
                 <div class="edit-status mt-3">
-                    <!-- Thông báo khi đang chỉnh sửa -->
+                    <!-- Thông báo khi bài viết đang chỉnh sửa -->
                     <div class="alert alert-info" th:if="${article.isBeingEdited}">
                         <i class="ri-information-line me-1"></i> Bài viết đang trong trạng thái chỉnh sửa.
                         <span th:if="${article.editStartedAt != null}">
@@ -299,6 +299,27 @@
                                 th:text="${#dates.format(article.editStartedAt, 'dd/MM/yyyy HH:mm')}"></span>
                         </span>
                     </div>
+                    
+                    <!-- Phần chọn category cho bài viết - chỉ hiển thị khi đang chỉnh sửa
+                    <div class="category-selection mt-3" th:if="${article.isBeingEdited}">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Chọn danh mục cho bài viết</h5>
+                            </div>
+                            <div class="card-body">
+                                <select id="categorySelect" class="form-select">
+                                    <option value="">-- Chọn danh mục --</option>
+                                    <option th:each="category : ${categories}" 
+                                            th:value="${category.id}" 
+                                            th:text="${category.name}"
+                                            th:selected="${article.categoryId != null && article.categoryId.id == category.id}">
+                                    </option>
+                                </select>
+                                <button id="saveCategoryBtn" class="btn btn-primary mt-2">Lưu danh mục</button>
+                            </div>
+                        </div>
+                    </div>
+                    </div> -->
 
                     <!-- Thông báo khi bài viết đang chờ phê duyệt -->
                     <div class="alert alert-secondary"
@@ -512,6 +533,26 @@
             </div>
         </div>
 
+        <!-- Phần chọn category cho bài viết - chỉ hiển thị khi đang chỉnh sửa -->
+        <div class="category-selection mt-3" th:if="${article.isBeingEdited}">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Chọn danh mục cho bài viết</h5>
+                </div>
+                <div class="card-body">
+                    <select id="categorySelect" class="form-select">
+                        <option value="">-- Chọn danh mục --</option>
+                        <option th:each="category : ${categories}"
+                                th:value="${category.id}"
+                                th:text="${category.name}"
+                                th:selected="${article.categoryId != null && article.categoryId.id == category.id}">
+                        </option>
+                    </select>
+                    <button id="saveCategoryBtn" class="btn btn-primary mt-2">Lưu danh mục</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Phần tóm tắt bài viết - chỉ hiển thị khi đang chỉnh sửa -->
         <div th:if="${article.isBeingEdited}" class="summary-section mt-4 mb-4 p-3 border rounded">
             <h4 class="summary-heading mb-3">Tóm tắt bài viết</h4>
@@ -596,6 +637,67 @@
 
                 let currentAudioUrl = /*[[${ article.audioUrl }]]*/ null;
                 let hasAudio = /*[[${ article.audioUrl != null }]]*/ false;
+
+                const saveCategoryBtn = document.getElementById('saveCategoryBtn');
+                const categorySelect = document.getElementById('categorySelect');
+
+                if (saveCategoryBtn && categorySelect) {
+                    saveCategoryBtn.addEventListener('click', function() {
+                        const categoryId = categorySelect.value;
+                        const articleSlug = document.location.pathname.split('/').slice(-1)[0].split('_')[0];
+                        const articleId = document.location.pathname.split('/').slice(-1)[0].split('_')[1];
+
+                        saveCategoryBtn.disabled = true;
+
+                        // Gửi request lưu category
+                        fetch(`/editor/articles/${articleSlug}_${articleId}/save-category`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                categoryId: categoryId
+                            })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                // Hiển thị thông báo
+                                const toastEl = document.getElementById('saveToast');
+                                const toastMessage = document.getElementById('toastMessage');
+                                const toast = new bootstrap.Toast(toastEl);
+
+                                if (data.success) {
+                                    toastMessage.textContent = data.message;
+                                    toastEl.classList.remove('bg-danger');
+                                    toastEl.classList.add('bg-success');
+                                } else {
+                                    toastMessage.textContent = data.message || 'Có lỗi xảy ra khi lưu danh mục';
+                                    toastEl.classList.remove('bg-success');
+                                    toastEl.classList.add('bg-danger');
+                                }
+
+                                toast.show();
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                // Hiển thị thông báo lỗi
+                                const toastEl = document.getElementById('saveToast');
+                                const toastMessage = document.getElementById('toastMessage');
+                                const toast = new bootstrap.Toast(toastEl);
+
+                                toastMessage.textContent = 'Có lỗi xảy ra khi lưu danh mục';
+                                toastEl.classList.remove('bg-success');
+                                toastEl.classList.add('bg-danger');
+
+                                toast.show();
+                            })
+                            .finally(() => {
+                                // Khôi phục trạng thái nút
+                                saveCategoryBtn.innerHTML = 'Lưu danh mục';
+                                saveCategoryBtn.disabled = false;
+                            });
+                    });
+                }
 
                 // Kiểm tra thêm sau khi trang đã tải
                 console.log('Initial currentSummary:', currentSummary);
@@ -1253,6 +1355,8 @@
                     });
                 }
             });
+
+
         </script>
     </th:block>
 

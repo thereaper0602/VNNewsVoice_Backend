@@ -117,12 +117,12 @@ public class AdminArticleController {
                 List<ArticleBlock> articleBlocks = articleBlockService
                         .getArticleBlocksByArticleId(article.get().getId());
                 List<Editor> editors = editorService.getEditors(new HashMap<>());
+                List<Category> categories = categoryService.getCategories(new HashMap<>());
 
                 model.addAttribute("article", article.get());
-
                 model.addAttribute("articleBlocks", articleBlocks);
-
                 model.addAttribute("editors", editors);
+                model.addAttribute("categories", categories);
 
                 return "dashboard/admin/article_admin_detail";
             }
@@ -276,5 +276,4 @@ public class AdminArticleController {
             return "redirect:/admin/articles";
         }
     }
-
 }
