@@ -23,6 +23,7 @@ import com.pmq.vnnewsvoice.pojo.ArticleBlock;
 import com.pmq.vnnewsvoice.service.ArticleBlockService;
 import com.pmq.vnnewsvoice.service.ArticleService;
 import com.pmq.vnnewsvoice.utils.Pagination;
+import com.pmq.vnnewsvoice.pojo.Category;
 
 @RestController
 @RequestMapping("/api")
@@ -77,13 +78,12 @@ public class ApiArticleController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{slug}_{id}")
+    @GetMapping("/articles/{slug}_{id}")
     public ResponseEntity<Map<String, Object>> getArticleDetail(
-
             @PathVariable("slug") String slug,
             @PathVariable("id") Long id
     ){
-        Optional<Article> articleOptional = articleService.getArticleById(id);
+        Optional<Article> articleOptional = articleService.getArticleBySlugAndId(slug, id);
         if(articleOptional.isEmpty()){
             return ResponseEntity.notFound().build();
         }
@@ -98,6 +98,43 @@ public class ApiArticleController {
         response.put("blocks", articleBlocksDto);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("articles/{slug}_{id}/related")
+    public ResponseEntity<Map<String, Object>> getRelatedArticles(
+        @PathVariable("slug") String slug,
+        @PathVariable("id") Long id,
+        @RequestParam(value = "limit", defaultValue = "10") int limit
+    ){
+        Optional<Article> articleOptional = articleService.getArticleBySlugAndId(slug, id);
+        if(articleOptional.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
+        Map<String, String> filters = new HashMap<>();
+
+        Article article = articleOptional.get();
+        Category category = article.getCategoryId();
+        if(category == null){
+            return ResponseEntity.ok(Map.of("relatedArticles", List.of()));
+        }
+
+        filters.put("categoryId", category.getId().toString());
+        filters.put("status", "PUBLISHED");
+
+        
+
+        List<Article> relatedArticles = articleService.getArticles(filters);
+
+        relatedArticles = relatedArticles.stream()
+                .filter(a -> !a.getId().equals(article.getId()))
+                .limit(limit)
+                .toList();
+        List<ArticleDto> relatedArticlesDto = relatedArticles.stream().map(articleMapper::toDto).toList();
+        return ResponseEntity.ok(Map.of("relatedArticles", relatedArticlesDto));
+    }
+
+    
+
+
 
 
 }

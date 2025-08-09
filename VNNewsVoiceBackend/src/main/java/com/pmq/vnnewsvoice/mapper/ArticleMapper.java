@@ -2,12 +2,18 @@ package com.pmq.vnnewsvoice.mapper;
 
 import com.pmq.vnnewsvoice.dto.ArticleDto;
 import com.pmq.vnnewsvoice.pojo.Article;
+import com.pmq.vnnewsvoice.service.CommentService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
 
 @Component
 public class ArticleMapper implements Serializable {
+    
+    @Autowired
+    private CommentService commentService;
+    
     public ArticleDto toDto(Article article) {
         if (article == null) {
             return null;
@@ -30,6 +36,10 @@ public class ArticleMapper implements Serializable {
             articleDto.setCategoryIdId(article.getCategoryId().getId());
             articleDto.setCategoryIdName(article.getCategoryId().getName());
         }
+        
+        // Đếm số lượng bình luận cho bài viết
+        long commentCount = commentService.countCommentsByArticleId(article.getId());
+        articleDto.setCommentCount(commentCount);
         
         return articleDto;
     }

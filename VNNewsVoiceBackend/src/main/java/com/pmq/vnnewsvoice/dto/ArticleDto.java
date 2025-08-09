@@ -23,11 +23,12 @@ public class ArticleDto implements Serializable {
     private Long categoryIdId;
     private String categoryIdName;
     private String topImageUrl;
+    private Long commentCount;
 
     public ArticleDto() {
     }
 
-    public ArticleDto(Long id, String title, String author, Date publishedDate, String audioUrl, String summary, Boolean isActive, String slug, String originalUrl, Long categoryIdId, String categoryIdName, String topImageUrl) {
+    public ArticleDto(Long id, String title, String author, Date publishedDate, String audioUrl, String summary, Boolean isActive, String slug, String originalUrl, Long categoryIdId, String categoryIdName, String topImageUrl, Long commentCount) {
         this.id = id;
         this.title = title;
         this.author = author;
@@ -40,6 +41,7 @@ public class ArticleDto implements Serializable {
         this.categoryIdId = categoryIdId;
         this.categoryIdName = categoryIdName;
         this.topImageUrl = topImageUrl;
+        this.commentCount = commentCount;
     }
 
     public Long getId() {
@@ -137,6 +139,14 @@ public class ArticleDto implements Serializable {
     public void setTopImageUrl(String topImageUrl) {
         this.topImageUrl = topImageUrl;
     }
+    
+    public Long getCommentCount() {
+        return commentCount;
+    }
+
+    public void setCommentCount(Long commentCount) {
+        this.commentCount = commentCount;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -154,12 +164,13 @@ public class ArticleDto implements Serializable {
                 Objects.equals(this.originalUrl, entity.originalUrl) &&
                 Objects.equals(this.categoryIdId, entity.categoryIdId) &&
                 Objects.equals(this.categoryIdName, entity.categoryIdName) &&
-                Objects.equals(this.topImageUrl, entity.topImageUrl);
+                Objects.equals(this.topImageUrl, entity.topImageUrl) &&
+                Objects.equals(this.commentCount, entity.commentCount);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, author, publishedDate, audioUrl, summary, isActive, slug, originalUrl, categoryIdId, categoryIdName, topImageUrl);
+        return Objects.hash(id, title, author, publishedDate, audioUrl, summary, isActive, slug, originalUrl, categoryIdId, categoryIdName, topImageUrl, commentCount);
     }
 
     @Override
@@ -176,6 +187,7 @@ public class ArticleDto implements Serializable {
                 "originalUrl = " + originalUrl + ", " +
                 "categoryIdId = " + categoryIdId + ", " +
                 "categoryIdName = " + categoryIdName + ", " +
-                "topImageUrl = " + topImageUrl + ")";
+                "topImageUrl = " + topImageUrl + ", " +
+                "commentCount = " + commentCount + ")";
     }
 }
