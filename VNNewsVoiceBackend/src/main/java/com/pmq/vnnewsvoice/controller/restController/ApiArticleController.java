@@ -49,11 +49,15 @@ public class ApiArticleController {
         Map<String, String> filters = new HashMap<>();
 
         if(params.containsKey("name")){
-            filters.put("name", params.get("name"));
+            filters.put("title", params.get("name"));
         }
 
         if(params.containsKey("categoryId")){
             filters.put("categoryId", params.get("categoryId"));
+        }
+
+        if(params.containsKey("generatorId")){
+            filters.put("generatorId", params.get("generatorId"));
         }
 
         if(params.containsKey("page")){
@@ -63,6 +67,7 @@ public class ApiArticleController {
         if(params.containsKey("generatorId")){
             filters.put("generatorId", params.get("generatorId"));
         }
+
         filters.put("status", "PUBLISHED");
 
         List<Article> articles = articleService.getArticles(filters);

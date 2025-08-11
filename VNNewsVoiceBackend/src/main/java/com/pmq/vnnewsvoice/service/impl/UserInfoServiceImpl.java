@@ -35,8 +35,7 @@ public class UserInfoServiceImpl implements UserInfoService {
     public UserInfo addUser(UserInfo userinfo) throws IOException {
         if (userinfo == null ||
                 userinfo.getUsername().isEmpty() ||
-                userinfo.getPassword().isEmpty() ||
-                userinfo.getPhoneNumber().isEmpty()) {
+                userinfo.getPassword().isEmpty()) {
             return null;
         }
         // isActive = true by default
@@ -91,6 +90,14 @@ public class UserInfoServiceImpl implements UserInfoService {
             return Optional.of(null);
         }
         return userInfoRepository.getUserByUsername(username);
+    }
+
+    @Override
+    public Optional<UserInfo> getUserByEmail(String email) {
+        if(email.isEmpty() || email == null){
+            return Optional.empty();
+        }
+        return userInfoRepository.getUserByEmail(email);
     }
 
     @Override

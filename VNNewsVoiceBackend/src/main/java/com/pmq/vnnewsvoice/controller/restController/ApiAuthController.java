@@ -1,17 +1,11 @@
 package com.pmq.vnnewsvoice.controller.restController;
 
-import com.pmq.vnnewsvoice.dto.JwtResponseDto;
-import com.pmq.vnnewsvoice.dto.LoginDto;
-import com.pmq.vnnewsvoice.dto.ReaderDto;
-import com.pmq.vnnewsvoice.dto.RegisterReaderDto;
+import com.pmq.vnnewsvoice.dto.*;
 import com.pmq.vnnewsvoice.mapper.ReaderMapper;
 import com.pmq.vnnewsvoice.mapper.RegisterReaderMapper;
 import com.pmq.vnnewsvoice.pojo.Reader;
 import com.pmq.vnnewsvoice.pojo.UserInfo;
-import com.pmq.vnnewsvoice.service.ReaderService;
-import com.pmq.vnnewsvoice.service.UserDetailService;
-import com.pmq.vnnewsvoice.service.UserInfoService;
-import com.pmq.vnnewsvoice.service.UserRoleService;
+import com.pmq.vnnewsvoice.service.*;
 import com.pmq.vnnewsvoice.utils.JwtUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -54,6 +50,9 @@ public class ApiAuthController {
 
     @Autowired
     private JwtUtils jwtUtils;
+
+    @Autowired
+    private GoogleAuthService googleAuthService;
 
 
     @PostMapping("/user/register")
@@ -116,6 +115,31 @@ public class ApiAuthController {
         }
     }
 
+    @PostMapping("/user/google-login")
+    public ResponseEntity<?> googleLogin(@RequestBody GoogleLoginDto googleLoginDto){
+        try{
+            UserInfo userInfo = googleAuthService.verifyGoogleToken(googleLoginDto.getTokenId());
+            UserDetails userDetails = userDetailService.loadUserByUsername(userInfo.getUsername());
+
+            Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+            String token = jwtUtils.generatJwtToken(authentication);
+
+            Map<String, Object> response = new HashMap<>();
+
+            response.put("token", token);
+            response.put("user", Map.of(
+                    "id", userInfo.getId(),
+                    "username", userInfo.getUsername(),
+                    "email", userInfo.getEmail(),
+                    "avatarUrl", userInfo.getAvatarUrl()
+            ));
+            return ResponseEntity.ok(response);
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
 
 
 

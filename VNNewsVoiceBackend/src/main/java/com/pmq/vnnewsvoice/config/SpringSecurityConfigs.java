@@ -38,6 +38,7 @@ public class SpringSecurityConfigs {
                         auth -> auth
                                 .requestMatchers("/assets/**").permitAll()
                                 .requestMatchers("/login").permitAll()
+                                .requestMatchers("/api/user/google-login").permitAll()
 
 
                                 .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -65,16 +66,15 @@ public class SpringSecurityConfigs {
                         .permitAll())
 
                 .httpBasic(httpbasic -> httpbasic.disable());
-//                .oauth2Login(Customizer.withDefaults());
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000/"));
+        config.setAllowedOrigins(List.of("http://localhost:3000")); // Bỏ dấu / ở cuối
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Content-Length", "Accept", "X-Requested-With"));
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
 

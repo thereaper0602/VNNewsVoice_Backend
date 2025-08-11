@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,15 @@ public class UserInfoRepositoryImpl implements UserInfoRepository {
                 .setParameter("username", username)
                 .getResultList();
         return userInfos.isEmpty() ? Optional.empty() : Optional.of(userInfos.get(0));
+    }
+
+    @Override
+    public Optional<UserInfo> getUserByEmail(String email) {
+        String hql = "FROM UserInfo u WHERE u.email = :email";
+        TypedQuery<UserInfo> query = entityManager.createQuery(hql, UserInfo.class);
+        query.setParameter("email", email);
+        List<UserInfo> results = query.getResultList();
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 
     @Override

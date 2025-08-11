@@ -15,6 +15,7 @@ public interface UserInfoRepository {
 
     Optional<UserInfo> getUserById(Long id);
     Optional<UserInfo> getUserByUsername(String username);
+    Optional<UserInfo> getUserByEmail(String email);
     List<UserInfo> getUsers(Map<String, String> params);
     List<UserInfo> searchUsers(Map<String, String> filters, Map<String, String> params);
 

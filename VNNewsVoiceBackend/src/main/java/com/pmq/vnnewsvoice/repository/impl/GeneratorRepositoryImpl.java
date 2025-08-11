@@ -30,6 +30,20 @@ public class GeneratorRepositoryImpl implements GeneratorRepository {
     }
 
     @Override
+    public List<Generator> getGenerators(Map<String, String> params) {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Generator> query = builder.createQuery(Generator.class);
+        Root<Generator> root = query.from(Generator.class);
+        query.select(root);
+        List<Predicate> predicates = buildSearchPredicates(params, builder, root);
+        if(!predicates.isEmpty()){
+            query.where(predicates.toArray(new Predicate[0]));
+        }
+
+        return entityManager.createQuery(query).getResultList();
+    }
+
+    @Override
     public Optional<Generator> getGeneratorById(Long id) {
         return Optional.ofNullable(entityManager.find(Generator.class, id));
     }

@@ -20,7 +20,8 @@ import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import java.io.Serializable;
 import java.util.Date;
-
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 /**
  *
  * @author ADMIN
@@ -49,6 +50,7 @@ public class UserProvider implements Serializable {
     private String providerType;
     @Lob
     @Column(name = "provider_data", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private Object providerData;
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)

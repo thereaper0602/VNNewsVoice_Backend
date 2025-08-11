@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface GeneratorRepository {
     Generator addGenerator(Generator generator);
 
+    List<Generator> getGenerators(Map<String, String> params);
+
     Optional<Generator> getGeneratorById(Long id);
     Optional<Generator> getGeneratorByName(String name);
     String getGeneratorURL(Long id);

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -42,6 +43,11 @@ public class GeneratorServiceImpl implements GeneratorService {
             return "";
         }
         return generatorOptional.get().getUrl();
+    }
+
+    @Override
+    public List<Generator> getGenerators(Map<String, String> params) {
+        return generatorRepository.getGenerators(params);
     }
 
     @Override

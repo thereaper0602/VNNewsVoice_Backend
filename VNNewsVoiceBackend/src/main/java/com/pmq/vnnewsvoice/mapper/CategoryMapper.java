@@ -13,7 +13,7 @@ public class CategoryMapper implements Serializable {
             return null;
         }
         CategoryDto categoryDto = new CategoryDto();
-        categoryDto.setId(categoryDto.getId());
+        categoryDto.setId(category.getId());
         categoryDto.setName(category.getName());
         categoryDto.setDescription(category.getDescription());
         categoryDto.setIsActive(category.getIsActive());

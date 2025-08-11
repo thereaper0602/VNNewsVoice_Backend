@@ -3,6 +3,7 @@ package com.pmq.vnnewsvoice.service;
 import com.pmq.vnnewsvoice.pojo.Generator;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -12,6 +13,8 @@ public interface GeneratorService {
     Optional<Generator> getGeneratorById(Long id);
     Optional<Generator> getGeneratorByName(String name);
     String getGeneratorURL(Long id);
+
+    List<Generator> getGenerators(Map<String, String> params);
 
     Optional<Generator> updateGenerator(Generator generator);
 
